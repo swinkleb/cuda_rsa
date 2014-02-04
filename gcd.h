@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <gmp.h>
+#include "/home/clupo/gmp/include/gmp.h"
 
 #define EXPECTED_KEY_NUM 1000
 

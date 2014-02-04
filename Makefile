@@ -1,11 +1,7 @@
-# Scott Winkleblack
-# Assignment 1
-# csc 556
-
 CC = gcc
-CFLAGS = -Wall -pedantic -g -c
+CFLAGS = -Wall -pedantic -g -c -std=c99
 LD = gcc
-LDFLAGS = -lgmp
+LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp
 
 all: rsa
 
