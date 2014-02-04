@@ -17,3 +17,7 @@ typedef struct {
 int readKeysFromFile(uint1024 **keys, char *filename);
 
 void outputKeysToFile(uint1024 *keys, unsigned int count, char *filename);
+
+int readKeysFromFileMPZ(mpz_t **keys, char *filename);
+
+void outputKeysToFileMPZ(mpz_t *keys, unsigned int count, char *filename);

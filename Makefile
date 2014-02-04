@@ -7,9 +7,10 @@ CFLAGS = -Wall -pedantic -g -c
 LD = gcc
 LDFLAGS = -lgmp
 
-all: rsa gcd
+all: rsa
 
-gcd:
+gcd: gcd.o
+	$(CC) $(CFLAGS) gcd.c
 
 io: io.o
 	$(CC) $(CFLAGS) io.c
@@ -17,8 +18,8 @@ io: io.o
 rsa.o:
 	$(CC) $(CFLAGS) rsa.c
 
-rsa: rsa.o io.o
-	$(LD) $(LDFLAGS) rsa.o io.o -o rsa
+rsa: rsa.o io.o gcd.o
+	$(LD) $(LDFLAGS) gcd.o rsa.o io.o -o rsa
 
 clean:
-	rm -rf *.o gcd rsa
+	rm -rf *.o rsa

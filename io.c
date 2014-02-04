@@ -80,3 +80,68 @@ void outputKeysToFile(uint1024 *keys, unsigned int count, char *filename)
    fclose(fp);
    mpz_clear(temp);
 }
+
+
+int readKeysFromFileMPZ(mpz_t **keys, char *filename)
+{
+   unsigned int count = 0;
+   unsigned int curArraySize = DEFAULT_SIZE;
+   FILE *fp = fopen(filename, "r");
+   if (NULL == fp)
+   {
+      perror("opening file");
+      exit(1);
+   }
+
+   *keys = (mpz_t *) malloc(1 + curArraySize * sizeof(mpz_t));
+   if (NULL == *keys)
+   {
+      perror("malloc");
+      exit(1);
+   }
+
+   mpz_init(*keys[count]);
+   /* read in each line of file as a key */
+   for (; mpz_inp_str((*keys)[count], fp, BASE_10); count++)
+   {
+      /* ran out of space need to make the array bigger */
+      if (count + 1 >= curArraySize)
+      {
+         curArraySize += DEFAULT_SIZE;
+         *keys = realloc(*keys, curArraySize * sizeof(mpz_t));
+         if (NULL == *keys)
+         {
+            perror("realloc");
+            exit(1);
+         }
+      }
+      
+      if (count + 1 < curArraySize)
+      {
+         mpz_init((*keys)[count + 1]);
+      }
+   }
+
+   fclose(fp);
+   
+   return count;
+}
+
+void outputKeysToFileMPZ(mpz_t *keys, unsigned int count, char *filename)
+{
+   FILE *fp = fopen(filename, "w");
+   if (NULL == fp)
+   {
+      perror("opening file");
+      exit(1);
+   }
+
+
+   for (int i = 0; i < count; i++)
+   {
+      mpz_out_str(fp, BASE_10, keys[i]);
+      fprintf(fp, "\n");
+   }
+
+   fclose(fp);
+}
