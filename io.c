@@ -5,7 +5,7 @@ int readKeysFromFile(uint1024 **keys, char *filename)
    mpz_t temp;
    size_t wordCount;
    unsigned int count;
-   unsigned int curArraySize = DEFAULT_SIZE;
+   unsigned int curArraySize = DEFAULT_SIZE + 1;
    FILE *fp = fopen(filename, "r");
    if (NULL == fp)
    {
@@ -38,7 +38,7 @@ int readKeysFromFile(uint1024 **keys, char *filename)
       }
 
       /* store in uint1024 so least significant word is first */
-      mpz_export(&((*keys)[count].words[0]), &wordCount, -1, BYTES_IN_WORD, 0, 0, temp);
+      mpz_export(&((*keys)[count].words[0]), &wordCount, 1, BYTES_IN_WORD, 0, 0, temp);
       /* if value does not have the full amount of words expected pad with words value of 0 */
       for (int i = wordCount; i < WORDS_PER_KEY; i++)
       {
@@ -69,7 +69,7 @@ void outputKeysToFile(uint1024 *keys, unsigned int count, char *filename)
 
    for (int i = 0; i < count; i++)
    {
-      mpz_import(temp, WORDS_PER_KEY, -1, BYTES_IN_WORD, 0, 0, &(keys[i].words[0]));
+      mpz_import(temp, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, &(keys[i].words[0]));
       mpz_out_str(fp, BASE_10, temp);
       fprintf(fp, "\n");
 
