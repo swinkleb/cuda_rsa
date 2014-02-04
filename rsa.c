@@ -1,17 +1,4 @@
 #include "rsa.h"
-#include "io.h"
-#include "gcd.h"
-
-int main (int argc, char **argv)
-{
-   mpz_t *array;
-   mpz_t *priv;
-   unsigned int count;
-
-   count = readKeysFromFileMPZ(&array, "input.txt");
-   count = findGCDs(array, count, &priv);
-   outputKeysToFileMPZ(priv, count, "output.txt");
-}
 
 void calcPrivateKey(mpz_t p, mpz_t q, mpz_t *d)
 {
