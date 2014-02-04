@@ -40,12 +40,9 @@ int readKeysFromFile(uint1024 **keys, char *filename)
       /* store in uint1024 so least significant word is first */
       mpz_export(&((*keys)[count].words[0]), &wordCount, -1, BYTES_IN_WORD, 0, 0, temp);
       /* if value does not have the full amount of words expected pad with words value of 0 */
-      if (wordCount < WORDS_PER_KEY) //TODO check if faster to memset just memset everything everytime
+      for (int i = wordCount; i < WORDS_PER_KEY; i++)
       {
-         for (int i = wordCount; i < WORDS_PER_KEY; i++)
-         {
-            (*keys)[count].words[i] = 0;
-         }
+         (*keys)[count].words[i] = 0;
       }
 
       /* set all bits to 0 so temp is ready for the next iter */
