@@ -73,19 +73,50 @@ __device__ void shiftLX(unsigned int *arr, unsigned int x)
    arr[[index]] |= (temp >> x);
 }
 
-__device__ void subtract(unsigned int *x, unsigned int *y)
+__device__ void subtract(uint32_t *x, uint32_t *y, uint32_t *result)
 {
-   unsigned int index = threadIdx.x;
-   uint32_t temp = x[index];
-   __shared__ unsigned int borrow[WORDS_PER_KEY];
+   __shared__ uint8_t borrow[WORDS_PER_KEY];
 
-   x[index] -= y[index];
+   uint8_t index = threadIdx.x;
 
-   /* detect underflow */
-   if (x[index] > temp)
-   {
-      borrow[index + 1] = 1;
+   // initialize borrow array to 0
+   borrow[index] = 0;
+   __syncthreads();
+
+   result[index] = x[index] - y[index];
+
+   if (x[index] < y[index] && index > 0) {
+      borrow[index - 1] = 1;
    }
-   
-   // TODO
+
+   int underflow = 0;
+
+   while (__any(borrow[index])) {
+      if (borrow[index]) {
+         underflow = result[index] < 1;
+         result[index] = result[index] - 1;
+
+         if (underflow && index > 0) {
+            borrow[index - 1] = 1;
+         }
+
+         borrow[index] = 0;
+      }
+   }
 }
+
+__device__ int geq(uint32_t *x, uint32_t *y) {
+   __shared__ uint8_t pos;
+
+   uint8_t index = threadIdx.x;
+
+   pos = WORDS_PER_KEY - 1;
+   __syncthreads();
+
+   if (x[index] != y[index]) {
+      atomicMin(&pos, index);
+   }
+
+   return x[pos] >= y[pos];
+}
+
