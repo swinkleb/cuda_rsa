@@ -1,6 +1,28 @@
 #include "gcdCuda.h"
 #include "io.h"
 
+__global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
+    uint32_t *bitvector){
+
+    int keyNum = blockIdx.y * gridDim.x + blockIdx.x;
+    int i = 0;
+    int result = 0;
+    __shared__ u1024bit_t shkey;
+
+    for(i = 0; i < NUM_INTS; i++){
+
+        shkey.number[i] = key.number[i];
+    }
+
+    __syncthreads();
+
+    gcd(&shkey, &key_comparison_list[keyNum], &result);
+
+    if(result)
+        (*bitvector) |= (LOW_ONE_MASK << keyNum);
+
+}
+
 // result ends up in y; x is also overwritten
 __device__ void gcd(unsigned int *x, unsigned int *y) {
    int c = 0;
