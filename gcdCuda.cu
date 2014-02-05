@@ -3,7 +3,7 @@ __device__ void shiftR1(unsigned int *arr)
    unsigned int index = threadIdx.x;
    uint32_t temp;
 
-   if (index != 0)
+   if (index != 31)
    {
       temp = arr[index + 1];
    }
@@ -12,8 +12,8 @@ __device__ void shiftR1(unsigned int *arr)
       temp = 0;
    }
 
-   arr[i] >>= 1;
-   arr[i] |= (temp << 31);
+   arr[[index]] >>= 1;
+   arr[[index]] |= (temp << 31);
 }
 
 __device__ void shiftL1(unsigned int *arr)
@@ -21,7 +21,7 @@ __device__ void shiftL1(unsigned int *arr)
    unsigned int index = threadIdx.x;
    uint32_t temp;
 
-   if (index != 0)
+   if (index != 31)
    {
       temp = arr[index + 1];
    }
@@ -30,8 +30,8 @@ __device__ void shiftL1(unsigned int *arr)
       temp = 0;
    }
 
-   arr[i] <<= 1;
-   arr[i] |= (temp >> 31);
+   arr[[index]] <<= 1;
+   arr[[index]] |= (temp >> 31);
 }
 
 
@@ -41,7 +41,7 @@ __device__ void shiftRX(unsigned int *arr, unsigned int x)
    unsigned int index = threadIdx.x;
    uint32_t temp;
 
-   if (index != 0)
+   if (index != 31)
    {
       temp = arr[index + 1];
    }
@@ -50,8 +50,8 @@ __device__ void shiftRX(unsigned int *arr, unsigned int x)
       temp = 0;
    }
 
-   arr[i] >>= x;
-   arr[i] |= (temp << x);
+   arr[[index]] >>= x;
+   arr[[index]] |= (temp << x);
 }
 
 /* x must be between 0 and 31  inclusive */
@@ -60,7 +60,7 @@ __device__ void shiftLX(unsigned int *arr, unsigned int x)
    unsigned int index = threadIdx.x;
    uint32_t temp;
 
-   if (index != 0)
+   if (index != 31)
    {
       temp = arr[index + 1];
    }
@@ -69,8 +69,8 @@ __device__ void shiftLX(unsigned int *arr, unsigned int x)
       temp = 0;
    }
 
-   arr[i] <<= x;
-   arr[i] |= (temp >> x);
+   arr[[index]] <<= x;
+   arr[[index]] |= (temp >> x);
 }
 
 __device__ void subtract(uint32_t *x, uint32_t *y, uint32_t *result)
