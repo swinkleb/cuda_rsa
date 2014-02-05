@@ -1,10 +1,12 @@
-#define ARG_COUNT 3
+#define MIN_ARG_COUNT 3
 #define PROG_ARG 0
 #define FLAG_ARG 1
-#define FILE_ARG 2
+#define IN_FILE_ARG 2
+#define OUT_FILE_ARG 3
+#define DEFAULT_OUT_FILE "output.txt"
 
 void usage(char *this);
 
-void cpuImpl(char *filename);
+void cpuImpl(char *inFile, char *outFile);
 
-void gpuImpl(char *filename);
+void gpuImpl(char *inFile, char *outFIle);

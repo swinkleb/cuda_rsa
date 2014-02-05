@@ -4,7 +4,7 @@
 
 int main (int argc, char **argv)
 {
-   if (argc < ARG_COUNT)
+   if (argc < MIN_ARG_COUNT)
    {   
       usage(argv[PROG_ARG]);
    }   
@@ -12,11 +12,11 @@ int main (int argc, char **argv)
    switch (argv[FLAG_ARG][0])
    {   
       case 'c':
-         cpuImpl(argv[FILE_ARG]);
+         cpuImpl(argv[IN_FILE_ARG], argc > MIN_ARG_COUNT ? argv[OUT_FILE_ARG] : NULL);
          break;
 
       case 'g':
-         gpuImpl(argv[FILE_ARG]);
+         gpuImpl(argv[IN_FILE_ARG], argc > MIN_ARG_COUNT ? argv[OUT_FILE_ARG] : NULL);
          break;
 
       default:
@@ -34,18 +34,26 @@ void usage(char *this)
    exit(1);
 }
 
-void cpuImpl(char *filename)
+void cpuImpl(char *inFile, char *outFile)
 {
    mpz_t *array;
-   mpz_t *priv;
+   mpz_t *privateKeys;
    unsigned int count;
 
-   count = readKeysFromFileMPZ(&array, filename);
-   count = findGCDs(array, count, &priv);
-   outputKeysToFileMPZ(priv, count, "output.txt");
+   count = readKeysFromFileMPZ(&array, inFile);
+   count = findGCDs(array, count, &privateKeys);
+   outputKeysToFileMPZ(privateKeys, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
 }
 
-void gpuImpl(char *filename)
+void gpuImpl(char *inFile, char *outFile)
 {
-   //TODO
+/* TODO
+   uint1024 *array;
+   uint1024 *privateKeys;
+   unsigned int count;
+
+   count = readKeysFromFile(&array, inFile);
+   count = findGCDs(array, count, &privateKeys);
+   outputKeysToFile(privateKeys, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
+*/
 }
