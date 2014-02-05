@@ -26,7 +26,7 @@ int main (int argc, char **argv)
 
 void usage(char *this)
 {
-   printf("Usage: %s <flag> <input_file>\n", this);
+   printf("Usage: %s <flag> <input_file> [output_file]\n", this);
    printf("Flags:\n");
    printf("\tc - cpu implementation\n");
    printf("\tg - gpu implementation\n");
