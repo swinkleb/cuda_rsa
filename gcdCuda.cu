@@ -86,14 +86,15 @@ __device__ void subtract(uint32_t *x, uint32_t *y) {
    borrow[index] = 0;
    __syncthreads();
 
-   x[index] = x[index] - y[index];
-
    if (x[index] < y[index] && index > 0) {
       borrow[index - 1] = 1;
    }
 
+   x[index] = x[index] - y[index];
+
    int underflow = 0;
 
+   __syncthreads();
    while (__any(borrow[index])) {
       if (borrow[index]) {
          underflow = x[index] < 1;
@@ -105,6 +106,7 @@ __device__ void subtract(uint32_t *x, uint32_t *y) {
 
          borrow[index] = 0;
       }
+      __syncthreads();
    }
 }
 
@@ -119,7 +121,7 @@ __device__ int geq(uint32_t *x, uint32_t *y) {
    __syncthreads();
 
    if (x[index] != y[index]) {
-      atomicMin(&pos, index);
+      atomicMin((int *) &pos, (int) index);
    }
 
    __syncthreads();
