@@ -2,25 +2,25 @@
 #include "io.h"
 
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
-    uint32_t *bitvector){
+   uint32_t *bitvector) {
 
-    int keyNum = blockIdx.y * gridDim.x + blockIdx.x;
-    int i = 0;
-    int result = 0;
-    __shared__ u1024bit_t shkey;
+   int keyNum = blockIdx.y * gridDim.x + blockIdx.x;
+   int i = 0;
+   int result = 0;
+   __shared__ u1024bit_t shkey;
 
-    for(i = 0; i < NUM_INTS; i++){
+   for (i = 0; i < NUM_INTS; i++){
 
-        shkey.number[i] = key.number[i];
-    }
+      shkey.number[i] = key.number[i];
+   }
 
-    __syncthreads();
+   __syncthreads();
 
-    gcd(&shkey, &key_comparison_list[keyNum], &result);
+   gcd(shkey->number, key_comparison_list[keyNum]->number);
 
-    if(result)
-        (*bitvector) |= (LOW_ONE_MASK << keyNum);
-
+   if (isGreaterThanOne(key_comparison_list[keyNum]->number)) {
+      (*bitvector) |= (LOW_ONE_MASK << keyNum);
+   }
 }
 
 // result ends up in y; x is also overwritten
@@ -166,5 +166,25 @@ __device__ int isNonZero(uint32_t *x) {
 
    __syncthreads();
    return nonZeroFound;
+}
+
+// TODO: parallelize this
+__device__ int isGreaterThanOne(uint32_t *number) {
+    int i;
+    for (i = 0; i < NUM_INTS; i++) {
+        if (i < NUM_INTS - 1 && number[i] > 0) {
+            // current element isn't the least significant one
+            // if > 0, whole number is > 1
+            return 1;
+        }
+        else if (i == NUM_INTS - 1 && number[i] > 1) {
+            // current element is least significant one
+            // if > 1, whole number is > 1
+            return 1;
+        }
+    }
+
+    // num is less than or equal to 1
+    return 0;
 }
 
