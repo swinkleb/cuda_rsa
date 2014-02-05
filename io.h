@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include "/home/clupo/gmp/include/gmp.h"
+//#include <gmp.h>
 
 #define BASE_10 10
 #define WORD_SIZE 32

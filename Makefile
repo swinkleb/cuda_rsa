@@ -2,6 +2,7 @@ CC = gcc
 CFLAGS = -Wall -pedantic -g -c -std=c99
 LD = gcc
 LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp
+#LDFLAGS = -lgmp
 
 all: main
 
