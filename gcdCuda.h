@@ -2,6 +2,16 @@
 #define LOW_ONE_MASK 0x01
 #endif
 
+#ifndef NUM_INTS
+#define NUM_INTS 32
+#endif
+
+typedef struct u1024bit_t{
+
+    uint32_t number[NUM_INTS];
+
+} u1024bit_t;
+
 __device__ void gcd(unsigned int *x, unsigned int *y);
 __device__ void shiftR1(unsigned int *arr);
 __device__ void shiftL1(unsigned int *arr);
