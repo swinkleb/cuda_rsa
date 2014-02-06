@@ -80,6 +80,84 @@ int findGCDs(mpz_t *arr, unsigned int size, char *filename)
    return count;
 }
 
+
+// make version that takes in i, j offsets, and bitvector but not size check for 1 one bit vector per block (uint8), NUM_BLOCKS bitvectors
+int findGCDs(mpz_t *arr, uint32_t *found, uint8_t *bitvector, int iOffset, int jOffset, char *filename)
+{
+   unsigned int count = 0;
+   mpz_t p;
+   mpz_t q;
+   mpz_t d;
+
+   mpz_inits(p, q, d, NULL);
+
+   /* move this outside function call */
+   FILE *fp = fopen(filename, "w");
+   if (NULL == fp) 
+   {   
+      perror("opening file");
+      exit(1);
+   }   
+   /* end */
+
+   /* each bitvector */
+   for (int i = 0; i < NUM_BLOCKS; i++)
+   {
+      /* each bit per bitvector */
+      for (int j = 0; j < BLOCK_DIM_Y; j++)
+      {
+         /* if corresponding bit is set in bit vector, found a common factor */
+         if (bitvector & (1 << j))
+         {
+            mpz_gcd(p, arr[i], arr[j]);
+
+            /* check if previously found */
+            if (!isFound(found, i))
+            {
+               mpz_cdiv_q(q, arr[i], p);
+               calcPrivateKey(p, q, &d);
+               mpz_out_str(fp, BASE_10, d);
+               fprintf(fp, "\n");
+
+               setFound(found, i);
+               count++;
+
+               /* debug code */
+/*
+                  mpz_out_str(stdout, BASE_10, arr[i]);
+                  printf("\n");
+*/
+            }
+
+            /* check if previously found */
+            if (!isFound(found, j))
+            {
+               mpz_cdiv_q(q, arr[j], p);
+               calcPrivateKey(p, q, &d);
+               mpz_out_str(fp, BASE_10, d);
+               fprintf(fp, "\n");
+
+               setFound(found, j);
+               count++;
+
+               /* debug code */
+/*
+                  mpz_out_str(stdout, BASE_10, arr[j]);
+                  printf("\n");
+*/
+            }
+         }
+      }
+      fflush(fp);
+   }
+   
+   mpz_clears(p, q, d, NULL);
+   free(found);
+   fclose(fp);
+
+   return count;
+}
+
 void setFound(uint32_t *arr, int bit)
 {
    int index = bit / WORD_SIZE;
