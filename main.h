@@ -18,8 +18,6 @@
 #define GRID_DIM_Y 1
 #define NUM_BLOCKS GRID_DIM_X * GRID_DIM_Y
 
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
-
 typedef struct u1024bit_t{
        uint32_t number[NUM_INTS];
 } u1024bit_t;
@@ -29,5 +27,3 @@ void usage(char *this);
 void cpuImpl(char *inFile, char *outFile);
 
 void gpuImpl(char *inFile, char *outFIle);
-
-static void HandleError( cudaError_t err, const char *file, int line);
