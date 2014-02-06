@@ -1,7 +1,6 @@
 #include "gcdCuda.h"
 #include "io.h"
-
-#define BLOCK_DIM_Y 8 // we'll define this somewhere else eventually
+#include "main.h"
 
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
    uint8_t *bitvector) {
@@ -30,7 +29,8 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
    gcd(shkey->number, key_comparison_list[keyNum]->number);
 
    if (isGreaterThanOne(key_comparison_list[keyNum]->number)) {
-      (bitvector[blockIdx.y * gridDim.x + blockIdx.x]) |= (LOW_ONE_MASK << keyNum);
+      (bitvector[blockIdx.y * gridDim.x + blockIdx.x]) |=
+         (LOW_ONE_MASK << threadIdx.y);
    }
 }
 
