@@ -21,7 +21,7 @@ gcdCuda.o:
 	$(NVCC) $(NFLAGS) gcdCuda.cu
 
 main.o:
-	$(NVCC) $(NFLAGS) main.c
+	$(CC) $(CFLAGS) main.c
 
 main: main.o rsa.o io.o gcd.o gcdCuda.o
 	$(LD) $(LDFLAGS) main.o gcd.o rsa.o io.o gcdCuda.o -o rsa
