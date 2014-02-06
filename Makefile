@@ -1,6 +1,8 @@
+NVCC = nvcc
+NFLAGS = 
 CC = gcc
 CFLAGS = -Wall -pedantic -g -c -std=c99
-LD = gcc
+LD = nvcc
 #LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp -lm
 LDFLAGS = -lgmp
 
@@ -14,6 +16,9 @@ io.o:
 
 rsa.o:
 	$(CC) $(CFLAGS) rsa.c
+
+gcdCuda.o:
+	$(NVCC) $(NFLAGS) rsaCuda.cu
 
 main.o:
 	$(CC) $(CFLAGS) main.c

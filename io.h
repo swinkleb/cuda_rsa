@@ -11,13 +11,9 @@
 #define WORDS_PER_KEY (KEY_SIZE / WORD_SIZE) 
 #define DEFAULT_SIZE 200000
 
-typedef struct {
-      uint32_t words[WORDS_PER_KEY];
-} uint1024;
+int readKeysFromFile(u1024bit_t **keys, char *filename);
 
-int readKeysFromFile(uint1024 **keys, char *filename);
-
-void outputKeysToFile(uint1024 *keys, unsigned int count, char *filename);
+void outputKeysToFile(u1024bit_t *keys, unsigned int count, char *filename);
 
 int readKeysFromFileMPZ(mpz_t **keys, char *filename);
 

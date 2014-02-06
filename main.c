@@ -1,6 +1,6 @@
-#include "io.h"
 #include "gcd.h"
 #include "main.h"
+#include "io.h"
 
 int main (int argc, char **argv)
 {
@@ -47,18 +47,12 @@ void cpuImpl(char *inFile, char *outFile)
 
 void gpuImpl(char *inFile, char *outFile)
 {
-   mpz_t *array;
-   unsigned int count;
-
-   count = readKeysFromFileMPZ(&array, inFile);
-   outputKeysToFileMPZ(array, count, DEFAULT_OUT_FILE);  
-/* TODO
-   uint1024 *array;
-   uint1024 *privateKeys;
+   u1024bit_t *array;
+//   u1024bit_t *privateKeys;
    unsigned int count;
 
    count = readKeysFromFile(&array, inFile);
-   count = findGCDs(array, count, &privateKeys);
-   outputKeysToFile(privateKeys, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
-*/
+//   count = findGCDs(array, count, &privateKeys);
+//   outputKeysToFile(privateKeys, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
+   outputKeysToFile(array, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
 }

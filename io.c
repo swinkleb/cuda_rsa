@@ -1,6 +1,7 @@
+#include "main.h"
 #include "io.h"
 
-int readKeysFromFile(uint1024 **keys, char *filename)
+int readKeysFromFile(u1024bit_t **keys, char *filename)
 {
    mpz_t temp;
    size_t wordCount;
@@ -15,7 +16,7 @@ int readKeysFromFile(uint1024 **keys, char *filename)
 
    mpz_init(temp);
 
-   *keys = (uint1024 *) malloc(curArraySize * sizeof(uint1024));
+   *keys = (u1024bit_t *) malloc(curArraySize * sizeof(u1024bit_t));
    if (NULL == *keys)
    {
       perror("malloc");
@@ -29,7 +30,7 @@ int readKeysFromFile(uint1024 **keys, char *filename)
       if (count >= curArraySize)
       {
          curArraySize += DEFAULT_SIZE;
-         *keys = realloc(*keys, sizeof(uint1024) * curArraySize);
+         *keys = realloc(*keys, sizeof(u1024bit_t) * curArraySize);
          if (NULL == *keys)
          {
             perror("realloc");
@@ -37,12 +38,12 @@ int readKeysFromFile(uint1024 **keys, char *filename)
          }
       }
 
-      /* store in uint1024 so least significant word is first */
-      mpz_export(&((*keys)[count].words[0]), &wordCount, 1, BYTES_IN_WORD, 0, 0, temp);
+      /* store in u1024bit_t so most significant word is first */
+      mpz_export(&((*keys)[count].number[0]), &wordCount, 1, BYTES_IN_WORD, 0, 0, temp);
       /* if value does not have the full amount of words expected pad with words value of 0 */
       for (int i = wordCount; i < WORDS_PER_KEY; i++)
       {
-         (*keys)[count].words[i] = 0;
+         (*keys)[count].number[i] = 0;
       }
 
       /* set all bits to 0 so temp is ready for the next iter */
@@ -55,7 +56,7 @@ int readKeysFromFile(uint1024 **keys, char *filename)
    return count;
 }
 
-void outputKeysToFile(uint1024 *keys, unsigned int count, char *filename)
+void outputKeysToFile(u1024bit_t *keys, unsigned int count, char *filename)
 {
    mpz_t temp;
    FILE *fp = fopen(filename, "w");
@@ -69,7 +70,7 @@ void outputKeysToFile(uint1024 *keys, unsigned int count, char *filename)
 
    for (int i = 0; i < count; i++)
    {
-      mpz_import(temp, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, &(keys[i].words[0]));
+      mpz_import(temp, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, &(keys[i].number[0]));
       mpz_out_str(fp, BASE_10, temp);
       fprintf(fp, "\n");
 

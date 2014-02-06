@@ -1,5 +1,6 @@
 #include "gcdCuda.h"
 #include "io.h"
+#include "main.h"
 
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
    uint32_t *bitvector) {
