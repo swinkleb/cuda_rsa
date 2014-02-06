@@ -40,39 +40,29 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 __device__ void gcd(unsigned int *x, unsigned int *y) {
    int c = 0;
 
+   __syncthreads(); // definitely needed here
+
    while (((x[WORDS_PER_KEY - 1] | y[WORDS_PER_KEY - 1]) & 1) == 0) {
-      __syncthreads(); // definitely needed here
       shiftR1(x);
       shiftR1(y);
       c++;
    }
 
    while (isNonZero(x)) {
-      // __syncthreads(); // doesn't seem to be needed
 
       while ((x[WORDS_PER_KEY - 1] & 1) == 0) {
-         // __syncthreads(); // doesn't seem to be needed
          shiftR1(x);
       }
 
       while ((y[WORDS_PER_KEY - 1] & 1) == 0) {
-         // __syncthreads(); // doesn't seem to be needed
          shiftR1(y);
       }
 
-      // __syncthreads(); // doesn't seem to be needed
       if (geq(x, y)) {
-         // __syncthreads(); // doesn't seem to be needed
          subtract(x, y);
-
-         // don't have evidence for it,
-         // but I'm pretty sure this is needed
-         __syncthreads();
-         
          shiftR1(x);
       }
       else {
-         // __syncthreads(); // doesn't seem to be needed
          subtract(y, x);
          shiftR1(y);
       }
