@@ -37,16 +37,21 @@ void usage(char *this)
 void cpuImpl(char *inFile, char *outFile)
 {
    mpz_t *array;
-   mpz_t *privateKeys;
    unsigned int count;
 
    count = readKeysFromFileMPZ(&array, inFile);
-   count = findGCDs(array, count, &privateKeys);
-   outputKeysToFileMPZ(privateKeys, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
+   count = findGCDs(array, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
+   
+   printf("Total number of bad keys found: %d\n", count);
 }
 
 void gpuImpl(char *inFile, char *outFile)
 {
+   mpz_t *array;
+   unsigned int count;
+
+   count = readKeysFromFileMPZ(&array, inFile);
+   outputKeysToFileMPZ(array, count, DEFAULT_OUT_FILE);  
 /* TODO
    uint1024 *array;
    uint1024 *privateKeys;
