@@ -6,9 +6,18 @@
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
    uint32_t *bitvector) {
 
-   int keyNum = blockIdx.y * gridDim.x + blockIdx.x;
+    /*We are using blocks of size (x, y) (32, 6),
+    so each row in a block will be responsible for computing one set of
+    key comparisons*/
+
+    /*OLD*/
+   /*int keyNum = blockIdx.y * gridDim.x + blockIdx.x;*/
+
+   /*New*/
+   int keyNum = (blockIdx.y * gridDim.x + blockIdx.x) * 
+        (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x);
+ 
    int i = 0;
-   int result = 0;
    __shared__ u1024bit_t shkey;
 
    for (i = 0; i < NUM_INTS; i++){
