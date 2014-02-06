@@ -1,6 +1,7 @@
 #include "gcd.h"
 #include "main.h"
 #include "io.h"
+#include "gcdCuda.h"
 
 int main (int argc, char **argv)
 {
@@ -53,5 +54,5 @@ void gpuImpl(char *inFile, char *outFile)
 
    count = readKeysFromFile(&array, inFile);
 
-   dispatchGcdCalls(array, count); // does everything and writes output file
+   dispatchGcdCalls(array, count); // does GCDs and writes output file
 }
