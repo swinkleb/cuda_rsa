@@ -21,3 +21,4 @@ __device__ int geq(uint32_t *x, uint32_t *y);
 __device__ int isNonZero(uint32_t *x);
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
     uint32_t *bitvector);
+__device__ int isGreaterThanOne(uint32_t *number);
