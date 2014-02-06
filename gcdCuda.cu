@@ -1,10 +1,10 @@
 #include "gcdCuda.h"
 #include "io.h"
 
-#define BLOCK_DIM_Y 6 // we'll define this somewhere else eventually
+#define BLOCK_DIM_Y 8 // we'll define this somewhere else eventually
 
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
-   uint32_t *bitvector) {
+   uint8_t *bitvector) {
 
     /*We are using blocks of size (x, y) (32, 6),
     so each row in a block will be responsible for computing one set of
@@ -30,7 +30,7 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
    gcd(shkey->number, key_comparison_list[keyNum]->number);
 
    if (isGreaterThanOne(key_comparison_list[keyNum]->number)) {
-      (*bitvector) |= (LOW_ONE_MASK << keyNum);
+      (bitvector[blockIdx.y * gridDim.x + blockIdx.x]) |= (LOW_ONE_MASK << keyNum);
    }
 }
 
