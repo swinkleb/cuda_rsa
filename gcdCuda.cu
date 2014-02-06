@@ -1,14 +1,22 @@
 #include "gcdCuda.h"
 #include "io.h"
-
-#define BLOCK_DIM_Y 6 // we'll define this somewhere else eventually
+#include "main.h"
 
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
-   uint32_t *bitvector) {
+   uint8_t *bitvector) {
 
-   int keyNum = blockIdx.y * gridDim.x + blockIdx.x;
+    /*We are using blocks of size (x, y) (32, 6),
+    so each row in a block will be responsible for computing one set of
+    key comparisons*/
+
+    /*OLD*/
+   /*int keyNum = blockIdx.y * gridDim.x + blockIdx.x;*/
+
+   /*New*/
+   int keyNum = (blockIdx.y * gridDim.x + blockIdx.x) * 
+        (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x);
+ 
    int i = 0;
-   int result = 0;
    __shared__ u1024bit_t shkey;
 
    for (i = 0; i < NUM_INTS; i++){
@@ -21,7 +29,8 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
    gcd(shkey->number, key_comparison_list[keyNum]->number);
 
    if (isGreaterThanOne(key_comparison_list[keyNum]->number)) {
-      (*bitvector) |= (LOW_ONE_MASK << keyNum);
+      (bitvector[blockIdx.y * gridDim.x + blockIdx.x]) |=
+         (LOW_ONE_MASK << threadIdx.y);
    }
 }
 
@@ -31,39 +40,29 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 __device__ void gcd(unsigned int *x, unsigned int *y) {
    int c = 0;
 
+   __syncthreads(); // definitely needed here
+
    while (((x[WORDS_PER_KEY - 1] | y[WORDS_PER_KEY - 1]) & 1) == 0) {
-      __syncthreads(); // definitely needed here
       shiftR1(x);
       shiftR1(y);
       c++;
    }
 
    while (isNonZero(x)) {
-      // __syncthreads(); // doesn't seem to be needed
 
       while ((x[WORDS_PER_KEY - 1] & 1) == 0) {
-         // __syncthreads(); // doesn't seem to be needed
          shiftR1(x);
       }
 
       while ((y[WORDS_PER_KEY - 1] & 1) == 0) {
-         // __syncthreads(); // doesn't seem to be needed
          shiftR1(y);
       }
 
-      // __syncthreads(); // doesn't seem to be needed
       if (geq(x, y)) {
-         // __syncthreads(); // doesn't seem to be needed
          subtract(x, y);
-
-         // don't have evidence for it,
-         // but I'm pretty sure this is needed
-         __syncthreads();
-         
          shiftR1(x);
       }
       else {
-         // __syncthreads(); // doesn't seem to be needed
          subtract(y, x);
          shiftR1(y);
       }
