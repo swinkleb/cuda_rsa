@@ -4,7 +4,7 @@ CC = gcc
 CFLAGS = -Wall -pedantic -g -c -std=c99
 LD = nvcc
 #LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp -lm
-LDFLAGS = -lgmp
+LDFLAGS = -lgmp -lm
 
 all: main
 

@@ -1,6 +1,7 @@
 rsa
-input/*
 output.txt
+input/*
+output/*
 
 # Object files
 *.o

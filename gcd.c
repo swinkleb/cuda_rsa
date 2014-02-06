@@ -95,3 +95,29 @@ int isFound(uint32_t *arr, int bit)
 
    return arr[index] & (1 << offset);
 }
+
+int gcd(mpz_t r, mpz_t a, mpz_t b)
+{
+   mpz_t temp;
+   mpz_init(temp);
+
+   /* if (b > a) */
+   if (mpz_cmp(a, b) < 0)
+   {   
+      mpz_set(temp, a);
+      mpz_set(a, b);
+      mpz_set(b, temp);
+   }   
+
+   /* while (b != 0) */
+   while (mpz_cmp_ui(b, (unsigned int) 0) != 0) 
+   {   
+      mpz_set(temp,b);
+      mpz_mod(b, a, b);
+      mpz_set(a,  temp);
+   }
+
+   mpz_set(r, a);
+
+   return mpz_cmp_ui(a, (unsigned int) 1) != 0;
+}

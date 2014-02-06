@@ -13,3 +13,5 @@ int findGCDs(mpz_t *arr, unsigned int size, char *filename);
 void setFound(uint32_t *arr, int bit);
 
 int isFound(uint32_t *arr, int bit);
+
+int gcd(mpz_t r, mpz_t a, mpz_t b);
