@@ -10,3 +10,12 @@ Run the setup.sh script to setup your path to include the necessary items in you
 If the gmp library still cannot be found at runtime then issue the following command:
 
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/clupo/gmp/lib/
+
+Compiling instructions:
+run make
+
+Running instructions:
+Usage: ./rsa <flag> <input_file> [output_file]
+Flags:
+   c - cpu implementation
+   g - gpu implementation
