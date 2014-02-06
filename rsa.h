@@ -1,6 +1,6 @@
 #include <stdio.h>
-//#include "/home/clupo/gmp/include/gmp.h"
-#include <gmp.h>
+#include "/home/clupo/gmp/include/gmp.h"
+//#include <gmp.h>
 
 #define RSA_E 65537
 

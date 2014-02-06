@@ -3,25 +3,25 @@ NFLAGS = -O3 -g -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,cod
 CC = gcc
 CFLAGS = -Wall -pedantic -g -c -std=c99
 LD = nvcc 
-#LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp -lm
-LDFLAGS = -lgmp -lm
+LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp -lm
+#LDFLAGS = -lgmp -lm
 
 all: main
 
 gcd.o:
-	$(CC) $(CFLAGS) gcd.c
+	$(NVCC) $(NFLAGS) gcd.cpp
 
 io.o:
-	$(CC) $(CFLAGS) io.c
+	$(NVCC) $(NFLAGS) io.cpp
 
 rsa.o:
-	$(CC) $(CFLAGS) rsa.c
+	$(NVCC) $(NFLAGS) rsa.cpp
 
 gcdCuda.o:
 	$(NVCC) $(NFLAGS) gcdCuda.cu
 
 main.o:
-	$(NVCC) $(NFLAGS) main.c
+	$(NVCC) $(NFLAGS) main.cpp
 
 main: rsa.o io.o gcd.o gcdCuda.o main.o
 	$(LD) $(LDFLAGS) main.o gcd.o rsa.o io.o gcdCuda.o -o rsa

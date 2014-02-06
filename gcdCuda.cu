@@ -3,7 +3,7 @@
 #include "gcd.h"
 #include "gcdCuda.h"
 
-void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, char *filename) {
+void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, const char *filename) {
    // do GCDs
    // resultant bit vector on host
    uint8_t bitVector[NUM_BLOCKS];
