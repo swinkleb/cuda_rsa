@@ -10,8 +10,8 @@
 
 int findGCDs(mpz_t *arr, unsigned int size, char *filename);
 
+int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, int commonKeyOffset, int iOffset, char *filename);
+
 void setFound(uint32_t *arr, int bit);
 
 int isFound(uint32_t *arr, int bit);
-
-int gcd(mpz_t r, mpz_t a, mpz_t b);

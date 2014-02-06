@@ -1,5 +1,5 @@
-#include "gcd.h"
 #include "main.h"
+#include "gcd.h"
 #include "io.h"
 #include "gcdCuda.h"
 
@@ -25,9 +25,9 @@ int main (int argc, char **argv)
    }   
 }
 
-void usage(char *this)
+void usage(char *myName)
 {
-   printf("Usage: %s <flag> <input_file> [output_file]\n", this);
+   printf("Usage: %s <flag> <input_file> [output_file]\n", myName);
    printf("Flags:\n");
    printf("\tc - cpu implementation\n");
    printf("\tg - gpu implementation\n");
@@ -50,9 +50,17 @@ void gpuImpl(char *inFile, char *outFile)
 {
    u1024bit_t *array;
 //   u1024bit_t *privateKeys;
+   uint32_t *found;
    unsigned int count;
 
    count = readKeysFromFile(&array, inFile);
 
-   dispatchGcdCalls(array, count); // does GCDs and writes output file
+   found = (uint32_t *) calloc(ceil(((float) count / (float) WORD_SIZE)), sizeof(uint32_t));
+   if (NULL == found)
+   {
+      perror("calloc");
+      exit(1);
+   }
+
+   dispatchGcdCalls(array, found, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
 }

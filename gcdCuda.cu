@@ -1,8 +1,9 @@
-#include "gcdCuda.h"
-#include "io.h"
 #include "main.h"
+#include "io.h"
+#include "gcd.h"
+#include "gcdCuda.h"
 
-void dispatchGcdCalls(u1024bit_t *array, int count) {
+void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, char *filename) {
    // do GCDs
    // resultant bit vector on host
    uint8_t bitVector[NUM_BLOCKS];
@@ -21,9 +22,10 @@ void dispatchGcdCalls(u1024bit_t *array, int count) {
    HANDLE_ERROR(cudaMalloc((void **) &d_keys,
       sizeof(u1024bit_t) * BLOCK_DIM_Y * NUM_BLOCKS));
    HANDLE_ERROR(cudaMalloc((void **) &d_bitVector,
-      sizeof(uint8_t) * NUM_BLOCKS);
+      sizeof(uint8_t) * NUM_BLOCKS));
 
-   int i, j;
+   int i;
+   int j;
    int toCopy;
 
    for (i = 0; i < count; i++) {
@@ -34,8 +36,8 @@ void dispatchGcdCalls(u1024bit_t *array, int count) {
             cudaMemcpyHostToDevice));
 
          // copy list of keys
-         toCopy = j + NUM_BLOCKS >= count ?
-             (count - j) * BLOCK_DIM_Y : BLOCK_DIM_Y * NUM_BLOCKS;
+         toCopy = j + NUM_BLOCKS >= count ? 
+            (count - j) * BLOCK_DIM_Y : BLOCK_DIM_Y * NUM_BLOCKS;
 
          // add a comment here explaining this
          HANDLE_ERROR(cudaMemset(d_keys, 0,
@@ -58,7 +60,7 @@ void dispatchGcdCalls(u1024bit_t *array, int count) {
             sizeof(uint8_t) * NUM_BLOCKS,
             cudaMemcpyDeviceToHost));
 
-         outputFunc(i, j, bitVector);
+         computeAndOutputGCDs(array, found, bitVector, i, j, filename);
       }
    }
 
@@ -87,14 +89,14 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 
    for (i = 0; i < NUM_INTS; i++){
 
-      shkey.number[i] = key.number[i];
+      shkey.number[i] = key->number[i];
    }
 
    __syncthreads();
 
-   gcd(shkey->number, key_comparison_list[keyNum]->number);
+   gcd(shkey.number, key_comparison_list[keyNum].number);
 
-   if (isGreaterThanOne(key_comparison_list[keyNum]->number)) {
+   if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
       (bitvector[blockIdx.y * gridDim.x + blockIdx.x]) |=
          (LOW_ONE_MASK << threadIdx.y);
    }

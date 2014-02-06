@@ -1,5 +1,7 @@
-#include "gcd.h"
 #include "rsa.h"
+#include "main.h"
+#include "io.h"
+#include "gcd.h"
 
 int findGCDs(mpz_t *arr, unsigned int size, char *filename)
 {
@@ -82,14 +84,17 @@ int findGCDs(mpz_t *arr, unsigned int size, char *filename)
 
 
 // make version that takes in i, j offsets, and bitvector but not size check for 1 one bit vector per block (uint8), NUM_BLOCKS bitvectors
-int findGCDs(mpz_t *arr, uint32_t *found, uint8_t *bitvector, int iOffset, int jOffset, char *filename)
+int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, int commonKeyOffset, int iOffset, char *filename)
 {
+   unsigned int thisKeyOffset;
    unsigned int count = 0;
    mpz_t p;
    mpz_t q;
    mpz_t d;
+   mpz_t temp1;
+   mpz_t temp2;
 
-   mpz_inits(p, q, d, NULL);
+   mpz_inits(p, q, d, temp1, temp2, NULL);
 
    /* move this outside function call */
    FILE *fp = fopen(filename, "w");
@@ -107,42 +112,50 @@ int findGCDs(mpz_t *arr, uint32_t *found, uint8_t *bitvector, int iOffset, int j
       for (int j = 0; j < BLOCK_DIM_Y; j++)
       {
          /* if corresponding bit is set in bit vector, found a common factor */
-         if (bitvector & (1 << j))
+         if (bitvector[i] & (1 << j))
          {
-            mpz_gcd(p, arr[i], arr[j]);
+            thisKeyOffset = iOffset + i * BLOCK_DIM_Y + j;
+            
+            mpz_import(temp1, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, 
+                  &(arr[commonKeyOffset].number[0]));
+
+            mpz_import(temp2, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, 
+                  &(arr[thisKeyOffset].number[0]));
+
+            mpz_gcd(p, temp1, temp2);
 
             /* check if previously found */
-            if (!isFound(found, i))
+            if (!isFound(found, commonKeyOffset))
             {
-               mpz_cdiv_q(q, arr[i], p);
+               mpz_cdiv_q(q, temp1, p);
                calcPrivateKey(p, q, &d);
                mpz_out_str(fp, BASE_10, d);
                fprintf(fp, "\n");
 
-               setFound(found, i);
+               setFound(found, commonKeyOffset);
                count++;
 
                /* debug code */
 /*
-                  mpz_out_str(stdout, BASE_10, arr[i]);
+                  mpz_out_str(stdout, BASE_10, temp1);
                   printf("\n");
 */
             }
 
             /* check if previously found */
-            if (!isFound(found, j))
+            if (!isFound(found, thisKeyOffset))
             {
-               mpz_cdiv_q(q, arr[j], p);
+               mpz_cdiv_q(q, temp2, p);
                calcPrivateKey(p, q, &d);
                mpz_out_str(fp, BASE_10, d);
                fprintf(fp, "\n");
 
-               setFound(found, j);
+               setFound(found, thisKeyOffset);
                count++;
 
                /* debug code */
 /*
-                  mpz_out_str(stdout, BASE_10, arr[j]);
+                  mpz_out_str(stdout, BASE_10, temp2);
                   printf("\n");
 */
             }
@@ -151,9 +164,10 @@ int findGCDs(mpz_t *arr, uint32_t *found, uint8_t *bitvector, int iOffset, int j
       fflush(fp);
    }
    
-   mpz_clears(p, q, d, NULL);
-   free(found);
+   mpz_clears(p, q, d, temp1, temp2, NULL);
+   /* Move this ouside call*/
    fclose(fp);
+   /* end */
 
    return count;
 }
@@ -172,30 +186,4 @@ int isFound(uint32_t *arr, int bit)
    int offset = bit % WORD_SIZE;
 
    return arr[index] & (1 << offset);
-}
-
-int gcd(mpz_t r, mpz_t a, mpz_t b)
-{
-   mpz_t temp;
-   mpz_init(temp);
-
-   /* if (b > a) */
-   if (mpz_cmp(a, b) < 0)
-   {   
-      mpz_set(temp, a);
-      mpz_set(a, b);
-      mpz_set(b, temp);
-   }   
-
-   /* while (b != 0) */
-   while (mpz_cmp_ui(b, (unsigned int) 0) != 0) 
-   {   
-      mpz_set(temp,b);
-      mpz_mod(b, a, b);
-      mpz_set(a,  temp);
-   }
-
-   mpz_set(r, a);
-
-   return mpz_cmp_ui(a, (unsigned int) 1) != 0;
 }
