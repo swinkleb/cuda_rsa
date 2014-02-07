@@ -1,3 +1,4 @@
+#include "gmp_location.h"
 #include "rsa.h"
 
 void calcPrivateKey(mpz_t p, mpz_t q, mpz_t *d)

@@ -3,8 +3,8 @@ NFLAGS = -O3 -g -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,cod
 CC = gcc
 CFLAGS = -Wall -pedantic -g -c -std=c99
 LD = nvcc 
-LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp -lm
-#LDFLAGS = -lgmp -lm
+#LDFLAGS = -L/home/clupo/gmp/lib/ -lgmp -lm
+LDFLAGS = -lgmp -lm
 
 all: main
 
@@ -30,6 +30,6 @@ clean:
 	rm -rf *.o rsa
 
 redo:
-	make clean;
-	clear;
-	make;
+	make clean
+	clear
+	make

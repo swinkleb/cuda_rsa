@@ -1,3 +1,4 @@
+#include "gmp_location.h"
 #include "main.h"
 #include "gcd.h"
 #include "io.h"

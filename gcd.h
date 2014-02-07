@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include "/home/clupo/gmp/include/gmp.h"
-//#include <gmp.h>
 
 #define EXPECTED_KEY_NUM 1000
 #define WORD_SIZE 32
