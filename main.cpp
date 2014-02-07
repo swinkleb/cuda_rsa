@@ -91,3 +91,23 @@ void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
    fclose(dfp);
    fclose(nfp);
 }
+
+// can use this for debugging
+// prints hex and decimal values for u1024bit_t's number array
+void print1024Int(uint32_t *number) {
+   static int printedNum = 0;
+
+   printf("Printing %i: ", printedNum++);
+
+   int i;
+   for (i = 0; i < NUM_INTS; i++) {
+      printf("%x ", number[i]);
+   }
+
+   printf("(");
+   for (i = 0; i < NUM_INTS; i++) {
+       printf("%u ", number[i]);
+   }
+   printf("\b)");
+   printf("\n");
+}

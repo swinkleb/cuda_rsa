@@ -29,3 +29,5 @@ void usage(char *myName);
 void cpuImpl(char *inFile, char *dOutFile, char *nOutFile);
 
 void gpuImpl(char *inFile, char *dOutFile, char *nOutFile);
+
+void print1024Int(uint32_t *number);
