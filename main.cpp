@@ -62,6 +62,7 @@ void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
 
    count = readKeysFromFile(&array, inFile);
 
+   /* keeps track of which keys have already been outputted */
    found = (uint32_t *) calloc(ceil(((float) count / (float) WORD_SIZE)), sizeof(uint32_t));
    if (NULL == found)
    {
@@ -69,5 +70,24 @@ void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
       exit(1);
    }
 
-   dispatchGcdCalls(array, found, count, dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile);
+   /* open output files so we can pass FILE *'s */
+   FILE *dfp = fopen(dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile, "w");
+   if (NULL == dfp) 
+   {   
+      perror("opening file");
+      exit(1);
+   } 
+
+   FILE *nfp = fopen(nOutFile == NULL ? DEFAULT_N_OUT_FILE : nOutFile, "w");
+   if (NULL == nfp) 
+   {   
+      perror("opening file");
+      exit(1);
+   } 
+
+   dispatchGcdCalls(array, found, count, dfp, nfp);
+
+   /* close output files */
+   fclose(dfp);
+   fclose(nfp);
 }

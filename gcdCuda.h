@@ -21,5 +21,5 @@ static void HandleError( cudaError_t err, const char *file, int line);
 
 extern "C"
 {
-   void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, const char *filename);
+   void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp);
 }

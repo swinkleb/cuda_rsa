@@ -71,7 +71,6 @@ int findGCDs(mpz_t *arr, unsigned int size, const char *dfilename, const char *n
                /* output D */
                mpz_out_str(dfp, BASE_10, d);
                fprintf(dfp, "\n");
-               
                   
                /* output N */
                mpz_out_str(nfp, BASE_10, arr[j]);
@@ -91,7 +90,7 @@ int findGCDs(mpz_t *arr, unsigned int size, const char *dfilename, const char *n
    return count;
 }
 
-int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, int commonKeyOffset, int iOffset, const char *filename)
+int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, int commonKeyOffset, int iOffset, FILE *dfp, FILE *nfp)
 {
    unsigned int thisKeyOffset;
    unsigned int count = 0;
@@ -102,15 +101,6 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
    mpz_t temp2;
 
    mpz_inits(p, q, d, temp1, temp2, NULL);
-
-   /* move this outside function call */
-   FILE *fp = fopen(filename, "w");
-   if (NULL == fp) 
-   {   
-      perror("opening file");
-      exit(1);
-   }   
-   /* end */
 
    /* each bitvector */
    for (int i = 0; i < NUM_BLOCKS; i++)
@@ -134,47 +124,43 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
             /* check if previously found */
             if (!isFound(found, commonKeyOffset))
             {
+               count++;
+               setFound(found, commonKeyOffset);
                mpz_cdiv_q(q, temp1, p);
                calcPrivateKey(p, q, &d);
-               mpz_out_str(fp, BASE_10, d);
-               fprintf(fp, "\n");
+               
+               /* output D */
+               mpz_out_str(dfp, BASE_10, d);
+               fprintf(dfp, "\n");
 
-               setFound(found, commonKeyOffset);
-               count++;
-
-               /* debug code */
-/*
-                  mpz_out_str(stdout, BASE_10, temp1);
-                  printf("\n");
-*/
+               /* output N */
+               mpz_out_str(nfp, BASE_10, temp1);
+               fprintf(nfp, "\n");
             }
 
             /* check if previously found */
             if (!isFound(found, thisKeyOffset))
             {
+               count++;
+               setFound(found, thisKeyOffset);
                mpz_cdiv_q(q, temp2, p);
                calcPrivateKey(p, q, &d);
-               mpz_out_str(fp, BASE_10, d);
-               fprintf(fp, "\n");
+ 
+               /* output D */
+               mpz_out_str(dfp, BASE_10, d);
+               fprintf(dfp, "\n");
 
-               setFound(found, thisKeyOffset);
-               count++;
-
-               /* debug code */
-/*
-                  mpz_out_str(stdout, BASE_10, temp2);
-                  printf("\n");
-*/
+               /* output N */
+               mpz_out_str(nfp, BASE_10, temp2);
+               fprintf(nfp, "\n");
             }
          }
       }
-      fflush(fp);
+      fflush(dfp);
+      fflush(nfp);
    }
    
    mpz_clears(p, q, d, temp1, temp2, NULL);
-   /* Move this ouside call*/
-   fclose(fp);
-   /* end */
 
    return count;
 }
