@@ -1,6 +1,6 @@
 test.c
 rsa
-output.txt
+output*.txt
 output/*
 
 # Object files
