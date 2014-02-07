@@ -5,6 +5,18 @@
 #include "gcdCuda.h"
 
 void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
+
+   // prints out inputted list of numbers
+   /*
+   printf("In dispatchGcdCalls\n");
+   printf("Count: %i\n", count);
+
+   int ugh;
+   for (ugh = 0; ugh < count; ugh++) {
+      print1024Int(array[ugh].number);
+   }
+   */
+
    // do GCDs
    // resultant bit vector on host
    uint8_t bitVector[NUM_BLOCKS];
@@ -85,17 +97,20 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
    int keyNum = (blockIdx.y * gridDim.x + blockIdx.x) * 
         (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x);
  
+   // make this prettier
    int i = 0;
-   __shared__ u1024bit_t shkey;
+   __shared__ u1024bit_t shkey[BLOCK_DIM_Y];
 
-   for (i = 0; i < NUM_INTS; i++){
+   int j;
+   for (j = 0; j < BLOCK_DIM_Y; j++) {
 
-      shkey.number[i] = key->number[i];
+      for (i = 0; i < NUM_INTS; i++){
+
+         shkey[j].number[i] = key->number[i];
+      }
    }
 
-//   __syncthreads();
-
-   gcd(shkey.number, key_comparison_list[keyNum].number);
+   gcd(shkey[blockIdx.y].number, key_comparison_list[keyNum].number);
 
    if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
       (bitvector[blockIdx.y * gridDim.x + blockIdx.x]) |=
@@ -104,13 +119,12 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 }
 
 // result ends up in y; x is also overwritten
-// had to mess around with __syncthreads() in different places;
-// notes from testing are still present
 __device__ void gcd(unsigned int *x, unsigned int *y) {
    int c = 0;
 
-   __syncthreads(); // definitely needed here
+   // __syncthreads(); // definitely needed here
 
+   // we think this loop is okay
    while (((x[WORDS_PER_KEY - 1] | y[WORDS_PER_KEY - 1]) & 1) == 0) {
       shiftR1(x);
       shiftR1(y);
@@ -123,7 +137,10 @@ __device__ void gcd(unsigned int *x, unsigned int *y) {
          shiftR1(x);
       }
 
+      // SOMETHING BAD HAPPENS AROUND HERE
+
       while ((y[WORDS_PER_KEY - 1] & 1) == 0) {
+         return;
          shiftR1(y);
       }
 
@@ -137,7 +154,7 @@ __device__ void gcd(unsigned int *x, unsigned int *y) {
       }
    }
 
-   __syncthreads(); // definitely needed here
+   // __syncthreads(); // definitely needed here
 
    shiftL(y, c);
 }
@@ -182,7 +199,6 @@ __device__ void shiftL(unsigned int *arr, unsigned int x) {
    int i;
    for (i = 0; i < x; i++) {
       shiftL1(arr);
-      __syncthreads(); // OLD
    }
 }
 
@@ -193,7 +209,6 @@ __device__ void subtract(uint32_t *x, uint32_t *y) {
 
    // initialize borrow array to 0
    borrow[threadIdx.y][index] = 0;
-   __syncthreads(); // OLD
 
    if (x[index] < y[index] && index > 0) {
       borrow[threadIdx.y][index - 1] = 1;
@@ -202,8 +217,6 @@ __device__ void subtract(uint32_t *x, uint32_t *y) {
    x[index] = x[index] - y[index];
 
    int underflow = 0;
-
-   __syncthreads(); // OLD
 
    while (__any(borrow[threadIdx.y][index])) {
       if (borrow[threadIdx.y][index]) {
@@ -216,7 +229,6 @@ __device__ void subtract(uint32_t *x, uint32_t *y) {
 
          borrow[threadIdx.y][index] = 0;
       }
-      __syncthreads(); // OLD
    }
 }
 
@@ -228,13 +240,11 @@ __device__ int geq(uint32_t *x, uint32_t *y) {
    if (index == 0) {
       pos[threadIdx.y] = WORDS_PER_KEY - 1;
    }
-   __syncthreads(); // OLD
 
    if (x[index] != y[index]) {
       atomicMin(&pos[threadIdx.y], index);
    }
 
-   __syncthreads(); // OLD
    return x[pos[threadIdx.y]] >= y[pos[threadIdx.y]];
 }
 
@@ -246,13 +256,11 @@ __device__ int isNonZero(uint32_t *x) {
    if (index == 0) {
       nonZeroFound[threadIdx.y] = 0;
    }
-   __syncthreads(); // OLD
 
    if (x[index] != 0) {
       nonZeroFound[threadIdx.y] = 1;
    }
 
-   __syncthreads(); // OLD
    return nonZeroFound[threadIdx.y];
 }
 
@@ -264,7 +272,6 @@ __device__ int isGreaterThanOne(uint32_t *number) {
    if (index == 0) {
       greaterThanOne[threadIdx.y] = 0;
    }
-   __syncthreads(); // OLD
 
    if (index < WORDS_PER_KEY - 1 && number[index] > 0) {
       greaterThanOne[threadIdx.y] = 1;
@@ -273,7 +280,6 @@ __device__ int isGreaterThanOne(uint32_t *number) {
       greaterThanOne[threadIdx.y] = 1;
    }
 
-   __syncthreads(); // OLD
    return greaterThanOne[threadIdx.y];
 }
 

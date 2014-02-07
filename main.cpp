@@ -97,17 +97,26 @@ void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
 void print1024Int(uint32_t *number) {
    static int printedNum = 0;
 
-   printf("Printing %i: ", printedNum++);
+   printf("%i HEX:\n", printedNum);
 
    int i;
    for (i = 0; i < NUM_INTS; i++) {
-      printf("%x ", number[i]);
+      printf("%20x ", number[i]);
+
+      if ((i + 1) % 4 == 0 && i > 0) {
+         printf("\n");
+      }
    }
 
-   printf("(");
+   printf("\n%i DEC:\n", printedNum++);
+
    for (i = 0; i < NUM_INTS; i++) {
-       printf("%u ", number[i]);
+       printf("%20u ", number[i]);
+
+      if ((i + 1) % 4 == 0 && i > 0) {
+         printf("\n");
+      }
    }
-   printf("\b)");
-   printf("\n");
+   printf("\b");
+   printf("\n\n");
 }
