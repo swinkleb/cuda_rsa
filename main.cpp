@@ -14,11 +14,15 @@ int main (int argc, char **argv)
    switch (argv[FLAG_ARG][0])
    {   
       case 'c':
-         cpuImpl(argv[IN_FILE_ARG], argc > MIN_ARG_COUNT ? argv[OUT_FILE_ARG] : NULL);
+         cpuImpl(argv[IN_FILE_ARG], 
+               argc > MIN_ARG_COUNT ? argv[D_OUT_FILE_ARG] : NULL,
+               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG + 1] : NULL);
          break;
 
       case 'g':
-         gpuImpl(argv[IN_FILE_ARG], argc > MIN_ARG_COUNT ? argv[OUT_FILE_ARG] : NULL);
+         gpuImpl(argv[IN_FILE_ARG],
+               argc > MIN_ARG_COUNT ? argv[D_OUT_FILE_ARG] : NULL,
+               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG + 1] : NULL);
          break;
 
       default:
@@ -28,7 +32,7 @@ int main (int argc, char **argv)
 
 void usage(char *myName)
 {
-   printf("Usage: %s <flag> <input_file> [output_file]\n", myName);
+   printf("Usage: %s <flag> <input_file> [d_output_file] [n_output_file]\n", myName);
    printf("Flags:\n");
    printf("\tc - cpu implementation\n");
    printf("\tg - gpu implementation\n");
@@ -36,21 +40,23 @@ void usage(char *myName)
    exit(1);
 }
 
-void cpuImpl(char *inFile, char *outFile)
+void cpuImpl(char *inFile, char *dOutFile, char *nOutFile)
 {
    mpz_t *array;
    unsigned int count;
 
    count = readKeysFromFileMPZ(&array, inFile);
-   count = findGCDs(array, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
+   count = findGCDs(array, count, 
+         dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile,
+         nOutFile == NULL ? DEFAULT_N_OUT_FILE : nOutFile
+         );
    
    printf("Total number of bad keys found: %d\n", count);
 }
 
-void gpuImpl(char *inFile, char *outFile)
+void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
 {
    u1024bit_t *array;
-//   u1024bit_t *privateKeys;
    uint32_t *found;
    unsigned int count;
 
@@ -63,5 +69,5 @@ void gpuImpl(char *inFile, char *outFile)
       exit(1);
    }
 
-   dispatchGcdCalls(array, found, count, outFile == NULL ? DEFAULT_OUT_FILE : outFile);
+   dispatchGcdCalls(array, found, count, dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile);
 }

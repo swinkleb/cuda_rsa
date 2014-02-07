@@ -4,7 +4,7 @@
 #include "io.h"
 #include "gcd.h"
 
-int findGCDs(mpz_t *arr, unsigned int size, const char *filename)
+int findGCDs(mpz_t *arr, unsigned int size, const char *dfilename, const char *nfilename)
 {
    unsigned int count = 0;
    uint32_t *found;
@@ -20,8 +20,15 @@ int findGCDs(mpz_t *arr, unsigned int size, const char *filename)
       exit(1);
    }
 
-   FILE *fp = fopen(filename, "w");
-   if (NULL == fp) 
+   FILE *dfp = fopen(dfilename, "w");
+   if (NULL == dfp) 
+   {   
+      perror("opening file");
+      exit(1);
+   }   
+  
+   FILE *nfp = fopen(nfilename, "w");
+   if (NULL == nfp) 
    {   
       perror("opening file");
       exit(1);
@@ -39,46 +46,47 @@ int findGCDs(mpz_t *arr, unsigned int size, const char *filename)
             /* check if previously found */
             if (!isFound(found, i))
             {
+               count++;
+               setFound(found, i);
                mpz_cdiv_q(q, arr[i], p);
                calcPrivateKey(p, q, &d);
-               mpz_out_str(fp, BASE_10, d);
-               fprintf(fp, "\n");
-             
-               setFound(found, i);
-               count++;
                
-               /* debug code */
-/*
-               mpz_out_str(stdout, BASE_10, arr[i]);
-               printf("\n");
-*/
+               /* output D */
+               mpz_out_str(dfp, BASE_10, d);
+               fprintf(dfp, "\n");
+             
+               /* output N */
+               mpz_out_str(nfp, BASE_10, arr[i]);
+               fprintf(nfp, "\n");
             }
 
             /* check if previously found */
             if (!isFound(found, j))
             {
+               count++;
+               setFound(found, j);
                mpz_cdiv_q(q, arr[j], p);
                calcPrivateKey(p, q, &d);
-               mpz_out_str(fp, BASE_10, d);
-               fprintf(fp, "\n");
                
-               setFound(found, j);
-               count++;
+               /* output D */
+               mpz_out_str(dfp, BASE_10, d);
+               fprintf(dfp, "\n");
+               
                   
-               /* debug code */
-/*
-               mpz_out_str(stdout, BASE_10, arr[j]);
-               printf("\n");
-*/
+               /* output N */
+               mpz_out_str(nfp, BASE_10, arr[j]);
+               fprintf(nfp, "\n");
             }
          }
       }
-      fflush(fp);
+      fflush(dfp);
+      fflush(nfp);
    }
    
    mpz_clears(p, q, d, NULL);
    free(found);
-   fclose(fp);
+   fclose(dfp);
+   fclose(nfp);
 
    return count;
 }
