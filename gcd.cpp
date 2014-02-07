@@ -112,12 +112,28 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
          if (bitvector[i] & (1 << j))
          {
             thisKeyOffset = iOffset + i * BLOCK_DIM_Y + j;
-            
+
             mpz_import(temp1, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, 
                   &(arr[commonKeyOffset].number[0]));
 
             mpz_import(temp2, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, 
                   &(arr[thisKeyOffset].number[0]));
+
+            /* Debug code */
+/*
+            printf("\n\nxxxxxxxxxxxxxxxxxxx\n");
+
+            fprintf(stdout, "q1:\n");
+            mpz_out_str(stdout, BASE_10, temp1);
+            fprintf(stdout, "\n");
+
+            fprintf(stdout, "q2:\n");
+            mpz_out_str(stdout, BASE_10, temp2);
+            fprintf(stdout, "\n");
+
+            printf("\nxxxxxxxxxxxxxxxxxxx\n");
+*/
+            /* End */
 
             mpz_gcd(p, temp1, temp2);
 
@@ -128,14 +144,38 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
                setFound(found, commonKeyOffset);
                mpz_cdiv_q(q, temp1, p);
                calcPrivateKey(p, q, &d);
+
+               /* Debug code */
+/*
+               printf("\n\nxxxxxxxxxxxxxxxxxxx\n");
                
-               /* output D */
-               mpz_out_str(dfp, BASE_10, d);
-               fprintf(dfp, "\n");
+               fprintf(stdout, "q:\n");
+               mpz_out_str(stdout, BASE_10, p);
+               fprintf(stdout, "\n");
+
+               fprintf(stdout, "p:\n");
+               mpz_out_str(stdout, BASE_10, q);
+               fprintf(stdout, "\n");
+
+               fprintf(stdout, "n:\n");
+               mpz_out_str(stdout, BASE_10, temp1);
+               fprintf(stdout, "\n");
+
+               fprintf(stdout, "d:\n");
+               mpz_out_str(stdout, BASE_10, d);
+               fprintf(stdout, "\n");
+               
+               printf("\nxxxxxxxxxxxxxxxxxxx\n");
+*/
+               /* End */
 
                /* output N */
                mpz_out_str(nfp, BASE_10, temp1);
                fprintf(nfp, "\n");
+               
+               /* output D */
+               mpz_out_str(dfp, BASE_10, d);
+               fprintf(dfp, "\n");
             }
 
             /* check if previously found */
@@ -146,13 +186,37 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
                mpz_cdiv_q(q, temp2, p);
                calcPrivateKey(p, q, &d);
  
-               /* output D */
-               mpz_out_str(dfp, BASE_10, d);
-               fprintf(dfp, "\n");
+               /* Debug code */
+/*
+               printf("\n\nxxxxxxxxxxxxxxxxxxx\n");
 
+               fprintf(stdout, "q:\n");
+               mpz_out_str(stdout, BASE_10, p);
+               fprintf(stdout, "\n");
+
+               fprintf(stdout, "p:\n");
+               mpz_out_str(stdout, BASE_10, q);
+               fprintf(stdout, "\n");
+
+               fprintf(stdout, "n:\n");
+               mpz_out_str(stdout, BASE_10, temp2);
+               fprintf(stdout, "\n");
+
+               fprintf(stdout, "d:\n");
+               mpz_out_str(stdout, BASE_10, d);
+               fprintf(stdout, "\n");
+               
+               printf("\nxxxxxxxxxxxxxxxxxxx\n");
+*/
+               /* End */
+               
                /* output N */
                mpz_out_str(nfp, BASE_10, temp2);
                fprintf(nfp, "\n");
+               
+               /* output D */
+               mpz_out_str(dfp, BASE_10, d);
+               fprintf(dfp, "\n");
             }
          }
       }
