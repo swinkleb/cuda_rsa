@@ -93,7 +93,7 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
       shkey.number[i] = key->number[i];
    }
 
-   __syncthreads();
+//   __syncthreads();
 
    gcd(shkey.number, key_comparison_list[keyNum].number);
 
