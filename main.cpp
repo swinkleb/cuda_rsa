@@ -25,6 +25,12 @@ int main (int argc, char **argv)
                argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG + 1] : NULL);
          break;
 
+      case 't':
+         testImpl(argv[IN_FILE_ARG],
+               argc > MIN_ARG_COUNT ? argv[D_OUT_FILE_ARG] : NULL,
+               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG + 1] : NULL);
+         break;
+
       default:
          usage(argv[PROG_ARG]);
    }   
@@ -86,6 +92,55 @@ void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
    } 
 
    dispatchGcdCalls(array, found, count, dfp, nfp);
+
+   /* close output files */
+   fclose(dfp);
+   fclose(nfp);
+}
+
+void testImpl(char *inFile, char *dOutFile, char *nOutFile)
+{
+   u1024bit_t *array;
+   mpz_t *marray;
+   uint32_t *found;
+   uint8_t bitvector[NUM_BLOCKS];
+
+   unsigned int count;
+
+   count = readKeysFromFile(&array, inFile); 
+   count = readKeysFromFileMPZ(&marray, inFile);
+   count = findGCDs(marray, count, 
+         dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile,
+         nOutFile == NULL ? DEFAULT_N_OUT_FILE : nOutFile
+         );
+
+   /* keeps track of which keys have already been outputted */
+   found = (uint32_t *) calloc(ceil(((float) count / (float) WORD_SIZE)), sizeof(uint32_t));
+   if (NULL == found)
+   {
+      perror("calloc");
+      exit(1);
+   }
+
+   /* open output files so we can pass FILE *'s */
+   FILE *dfp = fopen(dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile, "w");
+   if (NULL == dfp) 
+   {   
+      perror("opening file");
+      exit(1);
+   } 
+
+   FILE *nfp = fopen(nOutFile == NULL ? DEFAULT_N_OUT_FILE : nOutFile, "w");
+   if (NULL == nfp) 
+   {   
+      perror("opening file");
+      exit(1);
+   } 
+
+   bitvector[0] = 0xf0;
+   bitvector[1] = 0xf0;
+
+   computeAndOutputGCDs(array, found, bitvector, 0, 1, dfp, nfp);
 
    /* close output files */
    fclose(dfp);

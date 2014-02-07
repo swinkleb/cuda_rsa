@@ -162,15 +162,11 @@ __device__ void gcd(unsigned int *x, unsigned int *y) {
 __device__ void shiftR1(unsigned int *arr)
 {
    unsigned int index = threadIdx.x;
-   uint32_t temp;
+   uint32_t temp = 0;
 
    if (index != 0)
    {
       temp = arr[index - 1];
-   }
-   else
-   {
-      temp = 0;
    }
 
    arr[index] >>= 1;
@@ -180,15 +176,11 @@ __device__ void shiftR1(unsigned int *arr)
 __device__ void shiftL1(unsigned int *arr)
 {
    unsigned int index = threadIdx.x;
-   uint32_t temp;
+   uint32_t temp = 0;
 
    if (index != WORDS_PER_KEY - 1)
    {
       temp = arr[index + 1];
-   }
-   else
-   {
-      temp = 0;
    }
 
    arr[index] <<= 1;
