@@ -199,19 +199,38 @@ __device__ void subtract(uint32_t *x, uint32_t *y) {
 }
 
 __device__ int geq(uint32_t *x, uint32_t *y) {
-   __shared__ unsigned int pos[BLOCK_DIM_Y];
+   __shared__ unsigned int pos[BLOCK_DIM_Y][WORDS_PER_KEY];
 
-   int index = threadIdx.x;
+   int tid = threadIdx.x;
+   int index = threadIdx.y + blockIdx.x * blockDim.y;
 
-   if (index == 0) {
-      pos[threadIdx.y] = WORDS_PER_KEY - 1;
+   pos[index][tid] = WORDS_PER_KEY - 1;
+
+   if (x[tid] != y[tid]) {
+      pos[index][tid] = tid;
+   }
+   
+   /* unrolled reduction for 32 threads */
+   if (tid < 16)
+   {
+      if (pos[index][tid] < pos[index][tid + 16]) {
+         pos[index][tid] = pos[index][tid + 16];
+      }
+      if (pos[index][tid] < pos[index][tid + 8]) {
+         pos[index][tid] = pos[index][tid + 8]; 
+      }
+      if (pos[index][tid] < pos[index][tid + 4]) {
+         pos[index][tid] = pos[index][tid + 4]; 
+      }
+      if (pos[index][tid] < pos[index][tid + 2]) {
+         pos[index][tid] = pos[index][tid + 2]; 
+      }
+      if (pos[index][tid] < pos[index][tid + 1]) {
+         pos[index][tid] = pos[index][tid + 1]; 
+      }
    }
 
-   if (x[index] != y[index]) {
-      atomicMin(&pos[threadIdx.y], index);
-   }
-
-   return x[pos[threadIdx.y]] >= y[pos[threadIdx.y]];
+   return x[pos[index][0]] >= y[pos[index][0]];
 }
 
 __device__ int isNonZero(uint32_t *x) {
