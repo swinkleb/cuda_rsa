@@ -3,6 +3,12 @@
 #include "io.h"
 #include "gcd.h"
 #include "gcdCuda.h"
+#define FATAL(msg, ...) \
+  do {\
+    fprintf(stderr, "[%s:%d] "msg"\n", __FILE__, __LINE__, ##__VA_ARGS__);\
+    exit(-1);\
+  } while(0)
+
 
 void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
 
@@ -30,26 +36,58 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    int toCopy;
    int stride = NUM_BLOCKS * BLOCK_DIM_Y;
 
+    cudaError_t cuda_ret;
+    cudaStream_t cuda_stream1;
+    cudaStream_t cuda_stream2;
+    size_t pending, transfer_size;
+    cudaEvent_t active_event1, active_event2, tmp_event;
+
+    cuda_ret = cudaStreamCreate(&cuda_stream1);
+    if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA stream");
+    cuda_ret = cudaStreamCreate(&cuda_stream2);
+    if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA stream");
+
+/* Create CUDA events */
+        cuda_ret = cudaEventCreate(&active_event1);
+        if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA event");
+        cuda_ret = cudaEventCreate(&active_event2);
+        if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA event");
+
    for (i = 0; i < count; i++) {
       for (j = i + 1; j < count; j += stride) {
+         
          // copy current key
-         HANDLE_ERROR(cudaMemcpy(d_currentKey, array + i,
+         HANDLE_ERROR(cudaMemcpyAsync(d_currentKey, array + i,
             sizeof(u1024bit_t),
-            cudaMemcpyHostToDevice));
+            cudaMemcpyHostToDevice, cuda_stream1));
 
          // copy list of keys
          toCopy = j + stride >= count ? count - j : stride;
 
-         HANDLE_ERROR(cudaMemcpy(d_keys, array + j,
+         HANDLE_ERROR(cudaMemcpyAsync(d_keys, array + j,
             sizeof(u1024bit_t) * toCopy,
-            cudaMemcpyHostToDevice));
+            cudaMemcpyHostToDevice, cuda_stream1));
+
+    /* Start transferring */
+        //start_time = get_timestamp(); 
+
+        cuda_ret = cudaEventRecord(active_event1, cuda_stream1);
+        if(cuda_ret != cudaSuccess) FATAL("UNable to queue CUDA event");
+
 
          // initialize bit vector to 0
          HANDLE_ERROR(cudaMemset(d_bitVector, 0,
             sizeof(uint8_t) * NUM_BLOCKS));
 
          // kernel call
-         cuGCD<<<gridDim, blockDim>>>(d_currentKey, d_keys, d_bitVector);
+         cuGCD<<<gridDim, blockDim, cuda_stream>>>(d_currentKey, d_keys, d_bitVector);
+
+        cuda_ret = cudaEventSynchronize(active_event1);
+        if(cuda_ret != cudaSuccess) FATAL("Unable to wait for event");
+        
+        cuda_ret = cudaStreamSynchronize(cuda_stream1);
+        if(cuda_ret != cudaSuccess) FATAL("Unable to wait for device");
+
 
          HANDLE_ERROR(cudaPeekAtLastError());
 
