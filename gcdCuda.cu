@@ -7,7 +7,7 @@
 void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
 
    // prints out inputted list of numbers
-   /*
+
    printf("In dispatchGcdCalls\n");
    printf("Count: %i\n", count);
 
@@ -15,7 +15,6 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    for (ugh = 0; ugh < count; ugh++) {
       print1024Int(array[ugh].number);
    }
-   */
 
    // do GCDs
    // resultant bit vector on host
@@ -111,10 +110,13 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 
    __syncthreads();
 
+   printf("Keynum %i:\n", keyNum);
+
    gcd(shkey[blockIdx.y].number, key_comparison_list[keyNum].number);
 
    if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
       bitvector[keyNum / 8] |= LOW_ONE_MASK << (keyNum % 8);
+      printf("Keynum HERE %i:\n", keyNum);      
    }
 }
 
