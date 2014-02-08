@@ -1,0 +1,1 @@
+add volatile keyword to all cuda stuff and remove the -G flag, the aggressive compiler optimization is actually making things worse because we give it no hints -G makes it compile with no optimizations even if they are specified
