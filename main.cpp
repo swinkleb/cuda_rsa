@@ -16,19 +16,19 @@ int main (int argc, char **argv)
       case 'c':
          cpuImpl(argv[IN_FILE_ARG], 
                argc > MIN_ARG_COUNT ? argv[D_OUT_FILE_ARG] : NULL,
-               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG + 1] : NULL);
+               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG] : NULL);
          break;
 
       case 'g':
          gpuImpl(argv[IN_FILE_ARG],
                argc > MIN_ARG_COUNT ? argv[D_OUT_FILE_ARG] : NULL,
-               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG + 1] : NULL);
+               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG] : NULL);
          break;
 
       case 't':
          testImpl(argv[IN_FILE_ARG],
                argc > MIN_ARG_COUNT ? argv[D_OUT_FILE_ARG] : NULL,
-               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG + 1] : NULL);
+               argc > MIN_ARG_COUNT + 1 ? argv[N_OUT_FILE_ARG] : NULL);
          break;
 
       default:

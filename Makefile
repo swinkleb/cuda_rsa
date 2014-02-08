@@ -1,5 +1,5 @@
 NVCC = nvcc
-NFLAGS = -O3 -g -G -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -c
+NFLAGS = -O3 -g -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35 -c
 CC = gcc
 CFLAGS = -Wall -pedantic -g -c -std=c99
 LD = nvcc 
