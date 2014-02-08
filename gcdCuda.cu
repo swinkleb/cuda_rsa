@@ -8,6 +8,10 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 
    // resultant bit vector on host
    uint8_t bitVector[NUM_BLOCKS];
+   u1024bit_t *pinnedArray;
+
+   HANDLE_ERROR(cudaMallocHost(&pinnedArray, sizeof(u1024bit_t) * count));
+   memcpy(pinnedArray, array, sizeof(u1024bit_t) * count);
 
    // pointers on device
    u1024bit_t *d_keys;
@@ -24,7 +28,6 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 
    int i;
    int j;
-   int toCopy;
    int stride = NUM_BLOCKS * BLOCK_DIM_Y;
 
    for (i = 0; i < count; i++) {
@@ -34,7 +37,7 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
             sizeof(u1024bit_t),
             cudaMemcpyHostToDevice));
 
-         callCudaStreams(array, bitVector, d_keys, d_currentKey, d_bitVector,
+         callCudaStreams(pinnedArray, bitVector, d_keys, d_currentKey, d_bitVector,
                j, count, stride);
          computeAndOutputGCDs(array, found, bitVector, i, j, dfp, nfp);
       }
