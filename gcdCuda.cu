@@ -64,14 +64,22 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
          HANDLE_ERROR(cudaMemset(d_bitVector, 0,
             sizeof(uint8_t) * NUM_BLOCKS));
 
+         printf("YO\n");
+
          // kernel call
          cuGCD<<<gridDim, blockDim>>>(d_currentKey, d_keys, d_bitVector);
+
+         printf("YO\n");
          HANDLE_ERROR(cudaPeekAtLastError());
+
+         printf("YO\n");
 
          // copy bit vector back
          HANDLE_ERROR(cudaMemcpy(bitVector, d_bitVector,
             sizeof(uint8_t) * NUM_BLOCKS,
             cudaMemcpyDeviceToHost));
+
+         printf("YO\n");
 
          computeAndOutputGCDs(array, found, bitVector, i, j, dfp, nfp);
       }
@@ -86,35 +94,27 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
    uint8_t *bitvector) {
 
-    /*We are using blocks of size (x, y) (32, 6),
+   __shared__ u1024bit_t shkey[BLOCK_DIM_Y * GRID_DIM_X];
+
+    /* We are using blocks of size (x, y) (32, 6),
     so each row in a block will be responsible for computing one set of
-    key comparisons*/
+    key comparisons */
 
-    /*OLD*/
-   /*int keyNum = blockIdx.y * gridDim.x + blockIdx.x;*/
+   int keyNum = (BLOCK_DIM_Y * blockIdx.x) + threadIdx.y;
 
-   /*New*/
-   int keyNum = (blockIdx.y * gridDim.x + blockIdx.x) * 
-        (blockDim.x * blockDim.y) + (threadIdx.y * blockDim.x);
- 
-   // make this prettier
-   int i = 0;
-   __shared__ u1024bit_t shkey[BLOCK_DIM_Y];
+   int index = threadIdx.x;
 
-   int j;
-   for (j = 0; j < BLOCK_DIM_Y; j++) {
-
-      for (i = 0; i < NUM_INTS; i++){
-
-         shkey[j].number[i] = key->number[i];
-      }
+   int i;
+   for (i = 0; i < BLOCK_DIM_Y * GRID_DIM_X; i++) {
+      shkey[i].number[index] = key->number[index];
    }
+
+   __syncthreads();
 
    gcd(shkey[blockIdx.y].number, key_comparison_list[keyNum].number);
 
    if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
-      (bitvector[blockIdx.y * gridDim.x + blockIdx.x]) |=
-         (LOW_ONE_MASK << threadIdx.y);
+      bitvector[keyNum / 8] |= LOW_ONE_MASK << (keyNum % 8);
    }
 }
 
@@ -122,40 +122,45 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 __device__ void gcd(unsigned int *x, unsigned int *y) {
    int c = 0;
 
-   // __syncthreads(); // definitely needed here
+   if (isNonZero(x) && isNonZero(y)) {
+      // __syncthreads(); // definitely needed here
 
-   // we think this loop is okay
-   while (((x[WORDS_PER_KEY - 1] | y[WORDS_PER_KEY - 1]) & 1) == 0) {
-      shiftR1(x);
-      shiftR1(y);
-      c++;
-   }
-
-   while (__any(x[threadIdx.x])) {
-
-      while ((x[WORDS_PER_KEY - 1] & 1) == 0) {
+      // we think this loop is okay
+      while (((x[WORDS_PER_KEY - 1] | y[WORDS_PER_KEY - 1]) & 1) == 0) {
          shiftR1(x);
-      }
-
-      // SOMETHING BAD HAPPENS AROUND HERE
-
-      while ((y[WORDS_PER_KEY - 1] & 1) == 0) {
          shiftR1(y);
+         c++;
       }
 
-      if (geq(x, y)) {
-         subtract(x, y);
-         shiftR1(x);
+      while (__any(x[threadIdx.x])) {
+
+         while ((x[WORDS_PER_KEY - 1] & 1) == 0) {
+            shiftR1(x);
+         }
+
+         // SOMETHING BAD HAPPENS AROUND HERE
+
+         while ((y[WORDS_PER_KEY - 1] & 1) == 0) {
+            shiftR1(y);
+         }
+
+         if (geq(x, y)) {
+            subtract(x, y);
+            shiftR1(x);
+         }
+         else {
+            subtract(y, x);
+            shiftR1(y);
+         }
       }
-      else {
-         subtract(y, x);
-         shiftR1(y);
-      }
+
+      // __syncthreads(); // definitely needed here
+
+      shiftL(y, c);
    }
-
-   // __syncthreads(); // definitely needed here
-
-   shiftL(y, c);
+   else if (isNonZero(y)) {
+      y[threadIdx.x] = x[threadIdx.x];
+   }
 }
 
 __device__ void shiftR1(unsigned int *arr)
@@ -195,32 +200,32 @@ __device__ void shiftL(unsigned int *arr, unsigned int x) {
 
 __device__ void subtract(uint32_t *x, uint32_t *y) {
    __shared__ uint8_t borrow[BLOCK_DIM_Y][WORDS_PER_KEY];
+   uint8_t *borrowPtr = borrow[threadIdx.y];
 
    uint8_t index = threadIdx.x;
 
-   // initialize borrow array to 0
-   borrow[threadIdx.y][index] = 0;
-
-   if (x[index] < y[index] && index > 0) {
-      borrow[threadIdx.y][index - 1] = 1;
+   if (index == 0) {
+      borrowPtr[WORDS_PER_KEY - 1] = 0;
    }
 
-   x[index] = x[index] - y[index];
+   unsigned int temp;
+   temp = x[index] - y[index];
 
-   int underflow = 0;
+   if (index > 0) {
+      borrowPtr[index - 1] = (temp > x[index]);
+   }
 
-   while (__any(borrow[threadIdx.y][index])) {
-      if (borrow[threadIdx.y][index]) {
-         underflow = x[index] < 1;
-         x[index] = x[index] - 1;
+   while (__any(borrowPtr[index])) {
+      if (borrowPtr[index]) {
+         temp--;
+      }
 
-         if (underflow && index > 0) {
-            borrow[threadIdx.y][index - 1] = 1;
-         }
-
-         borrow[threadIdx.y][index] = 0;
+      if (index > 0) {
+         borrowPtr[index - 1] = (temp == 0xffffffffU && borrow[index]);
       }
    }
+
+   x[index] = temp;
 }
 
 __device__ int geq(uint32_t *x, uint32_t *y) {

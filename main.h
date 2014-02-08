@@ -16,7 +16,7 @@
 // block and grid dimensions
 #define BLOCK_DIM_Y 8 // be careful changing this; bit vector size depends on it
 #define BLOCK_DIM_X NUM_INTS
-#define GRID_DIM_X 2
+#define GRID_DIM_X 1
 #define GRID_DIM_Y 1
 #define NUM_BLOCKS (GRID_DIM_X * GRID_DIM_Y)
 
@@ -29,7 +29,5 @@ void usage(char *myName);
 void cpuImpl(char *inFile, char *dOutFile, char *nOutFile);
 
 void gpuImpl(char *inFile, char *dOutFile, char *nOutFile);
-
-void testImpl(char *inFile, char *dOutFile, char *nOutFile);
 
 void print1024Int(uint32_t *number);
