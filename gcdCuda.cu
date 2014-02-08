@@ -6,17 +6,6 @@
 
 void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
 
-   // prints out inputted list of numbers
-
-   printf("In dispatchGcdCalls\n");
-   printf("Count: %i\n", count);
-
-   int ugh;
-   for (ugh = 0; ugh < count; ugh++) {
-      print1024Int(array[ugh].number);
-   }
-
-   // do GCDs
    // resultant bit vector on host
    uint8_t bitVector[NUM_BLOCKS];
 
@@ -39,23 +28,24 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    int i;
    int j;
    int toCopy;
+   int stride = NUM_BLOCKS * BLOCK_DIM_Y;
 
    for (i = 0; i < count; i++) {
-      for (j = i + 1; j < count; j += NUM_BLOCKS) {
+      for (j = i + 1; j < count; j += stride) {
          // copy current key
-         HANDLE_ERROR(cudaMemcpy(d_currentKey, array + i,
+         HANDLE_ERROR(cudaMemcpy(d_currentKey, array[i],
             sizeof(u1024bit_t),
             cudaMemcpyHostToDevice));
 
          // copy list of keys
-         toCopy = j + NUM_BLOCKS >= count ? 
-            (count - j) * BLOCK_DIM_Y : BLOCK_DIM_Y * NUM_BLOCKS;
+         toCopy = j + stride >= count ? 
+            (count - j) * BLOCK_DIM_Y : stride;
 
-         // add a comment here explaining this
+         // add a comment here explaining this-- necessary?
          HANDLE_ERROR(cudaMemset(d_keys, 0,
-            sizeof(u1024bit_t) * BLOCK_DIM_Y * NUM_BLOCKS));
+            sizeof(u1024bit_t) * stride));
 
-         HANDLE_ERROR(cudaMemcpy(d_keys, array + j,
+         HANDLE_ERROR(cudaMemcpy(d_keys, &array[j],
             sizeof(u1024bit_t) * toCopy,
             cudaMemcpyHostToDevice));
 
@@ -63,22 +53,15 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
          HANDLE_ERROR(cudaMemset(d_bitVector, 0,
             sizeof(uint8_t) * NUM_BLOCKS));
 
-         printf("YO\n");
-
          // kernel call
          cuGCD<<<gridDim, blockDim>>>(d_currentKey, d_keys, d_bitVector);
 
-         printf("YO\n");
          HANDLE_ERROR(cudaPeekAtLastError());
-
-         printf("YO\n");
 
          // copy bit vector back
          HANDLE_ERROR(cudaMemcpy(bitVector, d_bitVector,
             sizeof(uint8_t) * NUM_BLOCKS,
             cudaMemcpyDeviceToHost));
-
-         printf("YO\n");
 
          computeAndOutputGCDs(array, found, bitVector, i, j, dfp, nfp);
       }
@@ -95,12 +78,11 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 
    __shared__ u1024bit_t shkey[BLOCK_DIM_Y * GRID_DIM_X];
 
-    /* We are using blocks of size (x, y) (32, 6),
+    /* We are using blocks of size (x, y) (32, 8),
     so each row in a block will be responsible for computing one set of
     key comparisons */
 
    int keyNum = (BLOCK_DIM_Y * blockIdx.x) + threadIdx.y;
-
    int index = threadIdx.x;
 
    int i;
@@ -112,7 +94,7 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
 
    printf("Keynum %i:\n", keyNum);
 
-   gcd(shkey[blockIdx.y].number, key_comparison_list[keyNum].number);
+   gcd(&(shkey[blockIdx.y].number[0]), &(key_comparison_list[keyNum].number[0]));
 
    if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
       bitvector[keyNum / 8] |= LOW_ONE_MASK << (keyNum % 8);
