@@ -108,11 +108,6 @@ void testImpl(char *inFile, char *dOutFile, char *nOutFile)
    unsigned int count;
 
    count = readKeysFromFile(&array, inFile); 
-   count = readKeysFromFileMPZ(&marray, inFile);
-   count = findGCDs(marray, count, 
-         dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile,
-         nOutFile == NULL ? DEFAULT_N_OUT_FILE : nOutFile
-         );
 
    /* keeps track of which keys have already been outputted */
    found = (uint32_t *) calloc(ceil(((float) count / (float) WORD_SIZE)), sizeof(uint32_t));
@@ -140,7 +135,7 @@ void testImpl(char *inFile, char *dOutFile, char *nOutFile)
    bitvector[0] = 0xf0;
    bitvector[1] = 0xf0;
 
-   computeAndOutputGCDs(array, found, bitvector, 0, 1, dfp, nfp);
+   testGcdCalls(array, found, count, dfp, nfp);
 
    /* close output files */
    fclose(dfp);

@@ -111,7 +111,6 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
          /* if corresponding bit is set in bit vector, found a common factor */
          if (bitvector[i] & (1 << j))
          {
-            printf("ohai\n");
             thisKeyOffset = iOffset + i * BLOCK_DIM_Y + j;
 
             mpz_import(temp1, WORDS_PER_KEY, 1, BYTES_IN_WORD, 0, 0, 

@@ -7,11 +7,12 @@
 
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 
+__global__ void mygcd(unsigned int *x, unsigned int *y);
 __device__ void gcd(unsigned int *x, unsigned int *y);
 __device__ void shiftR1(unsigned int *arr);
 __device__ void shiftL1(unsigned int *arr);
 __device__ void shiftL(unsigned int *arr, unsigned int x);
-__device__ void subtract(uint32_t *x, uint32_t *y);
+__device__ void subtract(uint32_t *x, uint32_t *y, uint32_t *z);
 __device__ int geq(uint32_t *x, uint32_t *y);
 __device__ int isNonZero(uint32_t *x);
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
@@ -21,5 +22,6 @@ static void HandleError( cudaError_t err, const char *file, int line);
 
 extern "C"
 {
+   void testGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp);
    void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp);
 }

@@ -4,6 +4,189 @@
 #include "gcd.h"
 #include "gcdCuda.h"
 
+void testGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
+
+   uint32_t *n1;
+   uint32_t *n2;
+   uint32_t result[32];
+
+   dim3 blockDim(32, 1);
+   dim3 gridDim(1, 1);
+
+   mpz_t temp;
+   mpz_init(temp);
+
+   // allocate space for current keys
+   HANDLE_ERROR(cudaMalloc((void **) &n1,
+      sizeof(uint32_t) * 32));
+   HANDLE_ERROR(cudaMalloc((void **) &n2,
+      sizeof(uint32_t) * 32));
+
+   // copy current keys
+   HANDLE_ERROR(cudaMemcpy(n1, array,
+      sizeof(uint32_t) * 32,
+      cudaMemcpyHostToDevice));
+
+   HANDLE_ERROR(cudaMemcpy(n2, array + 1,
+      sizeof(uint32_t) * 32,
+      cudaMemcpyHostToDevice));
+/*
+   mpz_import(temp, 32, 1, 4, 0, 0, 
+      array);
+   fprintf(stdout, "xxxxx n1:\n");
+   mpz_out_str(stdout, BASE_10, temp);
+   fprintf(stdout, "\nxxxxx\n");
+
+   mpz_import(temp, 32, 1, 4, 0, 0, 
+      array + 1);
+   fprintf(stdout, "xxxxx n2:\n");
+   mpz_out_str(stdout, BASE_10, temp);
+   fprintf(stdout, "\nxxxxx\n");
+*/
+   // kernel call
+   mygcd<<<gridDim, blockDim>>>(n1, n2);
+
+   HANDLE_ERROR(cudaPeekAtLastError());
+
+   // copy bit vector back
+   HANDLE_ERROR(cudaMemcpy(result, n2,
+      sizeof(uint32_t) * 32,
+      cudaMemcpyDeviceToHost));
+
+   mpz_import(temp, 32, 1, 4, 0, 0, 
+      result);
+   fprintf(stdout, "xxxxx p:\n");
+   mpz_out_str(stdout, BASE_10, temp);
+   fprintf(stdout, "\nxxxxx\n");
+
+   // do freeing
+   cudaFree(n1);
+   cudaFree(n2);
+}
+
+__global__ void mygcd(unsigned *x, unsigned *y) {
+   int c = 0;
+   int tid = threadIdx.x;
+
+   while(((x[32 - 1] | y[32 - 1]) & 1) == 0) {
+      shiftR1(x);
+      shiftR1(y);
+      c++;
+   }
+
+   while(__any(x[tid])) {
+      while((x[32 - 1] & 1) == 0)
+         shiftR1(x);
+
+      while((y[32 - 1] & 1) == 0)
+         shiftR1(y);
+
+      if(geq(x, y)) {
+         subtract(x, y, x);
+         shiftR1(x);
+      } else {
+         subtract(y, x, y);
+         shiftR1(y);
+      }
+   }
+
+   for(int i = 0; i < c; i++)
+      shiftL1(y);
+}
+
+__device__ void gcd(unsigned *x, unsigned *y) {
+   int c = 0;
+   int tid = threadIdx.x;
+
+   while(((x[32 - 1] | y[32 - 1]) & 1) == 0) {
+      shiftR1(x);
+      shiftR1(y);
+      c++;
+   }
+
+   while(__any(x[tid])) {
+      while((x[32 - 1] & 1) == 0)
+         shiftR1(x);
+
+      while((y[32 - 1] & 1) == 0)
+         shiftR1(y);
+
+      if(geq(x, y)) {
+         subtract(x, y, x);
+         shiftR1(x);
+      } else {
+         subtract(y, x, y);
+         shiftR1(y);
+      }
+   }
+
+   for(int i = 0; i < c; i++)
+      shiftL1(y);
+}
+
+__device__ void shiftR1(unsigned *x) {
+   unsigned x1 = 0;
+   int tid = threadIdx.x;
+
+   if(tid)
+      x1 = x[tid - 1];
+
+   x[tid] = (x[tid] >> 1) | (x1 << 31);
+}
+
+__device__ void shiftL1(unsigned *x) {
+   unsigned x1 = 0;
+   int tid = threadIdx.x;
+
+   if(tid != 32 - 1)
+      x1 = x[tid + 1];
+
+   x[tid] = (x[tid] << 1) | (x1 >> 31);
+}
+
+__device__ int geq(unsigned *x, unsigned *y) {
+   // pos is the maximum index (which int in the key) where the values are not the same
+   __shared__ unsigned int pos[BLOCK_DIM_Y];
+   int tid = threadIdx.x;
+
+   if(tid== 0)
+      pos[threadIdx.y] = 32 - 1;
+
+   if(x[tid] != y[tid])
+      atomicMin(&pos[threadIdx.y], tid);
+
+   return x[pos[threadIdx.y]] >= y[pos[threadIdx.y]];
+}
+
+__device__ void subtract(unsigned *x, unsigned *y, unsigned *z) {
+   __shared__ unsigned char s_borrow[BLOCK_DIM_Y][32];
+   // borrow points to j
+   unsigned char *borrow = s_borrow[threadIdx.y];
+   int tid = threadIdx.x;
+
+   if(tid == 0)
+      borrow[32 - 1] = 0;
+
+   unsigned int t;
+   t = x[tid] - y[tid];
+
+   if(tid)
+      borrow[tid - 1] = (t > x[tid]);
+
+   while(__any(borrow[tid]))
+   {
+      if(borrow[tid]) {
+         t--;
+      }
+
+      if(tid)
+         borrow[tid - 1] = (t == 0xffffffffU);
+      //borrow[tid - 1] = (t == 0xffffffffU && borrow[tid]);
+   }
+
+   z[tid] = t;
+}
+
 void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
 
    // resultant bit vector on host
@@ -33,7 +216,7 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    for (i = 0; i < count; i++) {
       for (j = i + 1; j < count; j += stride) {
          // copy current key
-         HANDLE_ERROR(cudaMemcpy(d_currentKey, array[i],
+         HANDLE_ERROR(cudaMemcpy(d_currentKey, &array[i],
             sizeof(u1024bit_t),
             cudaMemcpyHostToDevice));
 
@@ -101,7 +284,7 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
       printf("Keynum HERE %i:\n", keyNum);      
    }
 }
-
+/*
 // result ends up in y; x is also overwritten
 __device__ void gcd(unsigned int *x, unsigned int *y) {
    int c = 0;
@@ -227,7 +410,7 @@ __device__ int geq(uint32_t *x, uint32_t *y) {
 
    return x[pos[threadIdx.y]] >= y[pos[threadIdx.y]];
 }
-
+*/
 __device__ int isNonZero(uint32_t *x) {
    __shared__ uint8_t nonZeroFound[BLOCK_DIM_Y];
 
