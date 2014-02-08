@@ -5,6 +5,8 @@
 #define LOW_ONE_MASK 0x01
 #endif
 
+#define NUM_STREAMS 1
+
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 
 __global__ void mygcd(unsigned int *x, unsigned int *y);

@@ -7,9 +7,11 @@
 void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
 
    // resultant bit vector on host
-   uint8_t bitVector[NUM_BLOCKS];
+   //uint8_t bitVector[NUM_BLOCKS];
+   uint8_t *bitVector;
    u1024bit_t *pinnedArray;
 
+   HANDLE_ERROR(cudaMallocHost(&bitVector, sizeof(uint8_t) * NUM_BLOCKS));
    HANDLE_ERROR(cudaMallocHost(&pinnedArray, sizeof(u1024bit_t) * count));
    memcpy(pinnedArray, array, sizeof(u1024bit_t) * count);
 
