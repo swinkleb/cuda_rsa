@@ -213,19 +213,19 @@ __device__ int geq(uint32_t *x, uint32_t *y) {
    /* unrolled reduction for 32 threads */
    if (tid < 16)
    {
-      if (pos[index][tid] < pos[index][tid + 16]) {
+      if (pos[index][tid] > pos[index][tid + 16]) {
          pos[index][tid] = pos[index][tid + 16];
       }
-      if (pos[index][tid] < pos[index][tid + 8]) {
+      if (pos[index][tid] > pos[index][tid + 8]) {
          pos[index][tid] = pos[index][tid + 8]; 
       }
-      if (pos[index][tid] < pos[index][tid + 4]) {
+      if (pos[index][tid] > pos[index][tid + 4]) {
          pos[index][tid] = pos[index][tid + 4]; 
       }
-      if (pos[index][tid] < pos[index][tid + 2]) {
+      if (pos[index][tid] > pos[index][tid + 2]) {
          pos[index][tid] = pos[index][tid + 2]; 
       }
-      if (pos[index][tid] < pos[index][tid + 1]) {
+      if (pos[index][tid] > pos[index][tid + 1]) {
          pos[index][tid] = pos[index][tid + 1]; 
       }
    }
