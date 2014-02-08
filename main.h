@@ -16,7 +16,7 @@
 // block and grid dimensions
 #define BLOCK_DIM_Y 8 // be careful changing this; bit vector size depends on it
 #define BLOCK_DIM_X NUM_INTS
-#define GRID_DIM_X 25
+#define GRID_DIM_X 23
 #define GRID_DIM_Y 1
 #define NUM_BLOCKS (GRID_DIM_X * GRID_DIM_Y)
 
