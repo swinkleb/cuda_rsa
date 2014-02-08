@@ -40,7 +40,7 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
     cudaStream_t cuda_stream1;
     cudaStream_t cuda_stream2;
     size_t pending, transfer_size;
-    cudaEvent_t active_event1, active_event2, tmp_event;
+    cudaEvent_t memcpy_event, kernel_event;
 
     cuda_ret = cudaStreamCreate(&cuda_stream1);
     if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA stream");
@@ -48,9 +48,9 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
     if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA stream");
 
 /* Create CUDA events */
-        cuda_ret = cudaEventCreate(&active_event1);
+        cuda_ret = cudaEventCreate(&memcpy_event);
         if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA event");
-        cuda_ret = cudaEventCreate(&active_event2);
+        cuda_ret = cudaEventCreate(&kernel_event);
         if(cuda_ret != cudaSuccess) FATAL("Unable to create CUDA event");
 
    for (i = 0; i < count; i++) {
@@ -67,37 +67,34 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
          HANDLE_ERROR(cudaMemcpyAsync(d_keys, array + j,
             sizeof(u1024bit_t) * toCopy,
             cudaMemcpyHostToDevice, cuda_stream1));
-
-    /* Start transferring */
-        //start_time = get_timestamp(); 
-
-        cuda_ret = cudaEventRecord(active_event1, cuda_stream1);
-        if(cuda_ret != cudaSuccess) FATAL("UNable to queue CUDA event");
-
-
-         // initialize bit vector to 0
-         HANDLE_ERROR(cudaMemset(d_bitVector, 0,
-            sizeof(uint8_t) * NUM_BLOCKS));
-
-         // kernel call
-         cuGCD<<<gridDim, blockDim, cuda_stream>>>(d_currentKey, d_keys, d_bitVector);
-
-        cuda_ret = cudaEventSynchronize(active_event1);
-        if(cuda_ret != cudaSuccess) FATAL("Unable to wait for event");
         
-        cuda_ret = cudaStreamSynchronize(cuda_stream1);
-        if(cuda_ret != cudaSuccess) FATAL("Unable to wait for device");
+                 // initialize bit vector to 0
+         HANDLE_ERROR(cudaMemsetAsync(d_bitVector, 0,
+            sizeof(uint8_t) * NUM_BLOCKS, cuda_stream1));
 
+        cuda_ret = cudaEventRecord(memcpy_event, cuda_stream1);
+        if(cuda_ret != cudaSuccess) FATAL("UNable to queue CUDA event");
+         // kernel call
+         cuGCD<<<gridDim, blockDim, 0, cuda_stream1>>>(d_currentKey, d_keys, d_bitVector);
+
+        cuda_ret = cudaEventRecord(kernel_event, cuda_stream1);
+
+        if(cuda_ret != cudaSuccess) FATAL("UNable to queue CUDA event");
 
          HANDLE_ERROR(cudaPeekAtLastError());
 
          // copy bit vector back
-         HANDLE_ERROR(cudaMemcpy(bitVector, d_bitVector,
+         HANDLE_ERROR(cudaMemcpyAsync(bitVector, d_bitVector,
             sizeof(uint8_t) * NUM_BLOCKS,
-            cudaMemcpyDeviceToHost));
+            cudaMemcpyDeviceToHost, cuda_stream1));
+
+        cuda_ret = cudaEventRecord(memcpy_event, cuda_stream1);
+        if(cuda_ret != cudaSuccess) FATAL("UNable to queue CUDA event");
 
          computeAndOutputGCDs(array, found, bitVector, i, j, dfp, nfp);
+
       }
+
    }
 
    // do freeing
