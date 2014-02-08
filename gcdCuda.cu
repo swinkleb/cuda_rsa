@@ -14,9 +14,6 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    u1024bit_t *d_currentKey;
    uint8_t *d_bitVector;
 
-   dim3 blockDim(BLOCK_DIM_X, BLOCK_DIM_Y);
-   dim3 gridDim(GRID_DIM_X, GRID_DIM_Y);
-
    // allocate space for current key, keys to compare and bit vector
    HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
       sizeof(u1024bit_t)));
@@ -37,27 +34,8 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
             sizeof(u1024bit_t),
             cudaMemcpyHostToDevice));
 
-         // copy list of keys
-         toCopy = j + stride >= count ? count - j : stride;
-
-         HANDLE_ERROR(cudaMemcpy(d_keys, array + j,
-            sizeof(u1024bit_t) * toCopy,
-            cudaMemcpyHostToDevice));
-
-         // initialize bit vector to 0
-         HANDLE_ERROR(cudaMemset(d_bitVector, 0,
-            sizeof(uint8_t) * NUM_BLOCKS));
-
-         // kernel call
-         cuGCD<<<gridDim, blockDim>>>(d_currentKey, d_keys, d_bitVector);
-
-         HANDLE_ERROR(cudaPeekAtLastError());
-
-         // copy bit vector back
-         HANDLE_ERROR(cudaMemcpy(bitVector, d_bitVector,
-            sizeof(uint8_t) * NUM_BLOCKS,
-            cudaMemcpyDeviceToHost));
-
+         callCudaStreams(array, bitVector, d_keys, d_currentKey, d_bitVector,
+               j, count, stride);
          computeAndOutputGCDs(array, found, bitVector, i, j, dfp, nfp);
       }
    }
@@ -66,6 +44,35 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    cudaFree(d_keys);
    cudaFree(d_currentKey);
    cudaFree(d_bitVector);
+}
+
+void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
+      u1024bit_t *d_keys, u1024bit_t *d_currentKey, uint8_t *d_bitVector,
+      int j, int count, int stride)
+{
+   static dim3 blockDim(BLOCK_DIM_X, BLOCK_DIM_Y);
+   static dim3 gridDim(GRID_DIM_X, GRID_DIM_Y);
+
+   // copy list of keys
+   int toCopy = j + stride >= count ? count - j : stride;
+
+   HANDLE_ERROR(cudaMemcpy(d_keys, array + j,
+            sizeof(u1024bit_t) * toCopy,
+            cudaMemcpyHostToDevice));
+
+   // initialize bit vector to 0
+   HANDLE_ERROR(cudaMemset(d_bitVector, 0,
+            sizeof(uint8_t) * NUM_BLOCKS));
+
+   // kernel call
+   cuGCD<<<gridDim, blockDim>>>(d_currentKey, d_keys, d_bitVector);
+
+   HANDLE_ERROR(cudaPeekAtLastError());
+
+   // copy bit vector back
+   HANDLE_ERROR(cudaMemcpy(bitVector, d_bitVector,
+            sizeof(uint8_t) * NUM_BLOCKS,
+            cudaMemcpyDeviceToHost));
 }
 
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
