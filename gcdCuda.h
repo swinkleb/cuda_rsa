@@ -27,5 +27,5 @@ extern "C"
    void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp);
    void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
          u1024bit_t *d_keys, u1024bit_t *d_currentKey, uint8_t *d_bitVector,
-         int j, int count, int stride);
+         int j, int count, int stride, cudaStream_t stream);
 }

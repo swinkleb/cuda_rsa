@@ -7,25 +7,30 @@
 void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
 
    // resultant bit vector on host
-   //uint8_t bitVector[NUM_BLOCKS];
-   uint8_t *bitVector;
    u1024bit_t *pinnedArray;
-
-   HANDLE_ERROR(cudaMallocHost(&bitVector, sizeof(uint8_t) * NUM_BLOCKS));
+   uint8_t *bitVector_s1;
+   
    HANDLE_ERROR(cudaMallocHost(&pinnedArray, sizeof(u1024bit_t) * count));
    memcpy(pinnedArray, array, sizeof(u1024bit_t) * count);
 
+   HANDLE_ERROR(cudaMallocHost(&bitVector_s1, sizeof(uint8_t) * NUM_BLOCKS));
+
    // pointers on device
-   u1024bit_t *d_keys;
    u1024bit_t *d_currentKey;
-   uint8_t *d_bitVector;
+   u1024bit_t *d_keys_s1;
+   uint8_t *d_bitVector_s1;
+
+   // stream stuff
+   cudaStream_t s1;
+   cudaStreamCreate(&s1);
 
    // allocate space for current key, keys to compare and bit vector
    HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
       sizeof(u1024bit_t)));
-   HANDLE_ERROR(cudaMalloc((void **) &d_keys,
+
+   HANDLE_ERROR(cudaMalloc((void **) &d_keys_s1,
       sizeof(u1024bit_t) * BLOCK_DIM_Y * NUM_BLOCKS));
-   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector,
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s1,
       sizeof(uint8_t) * NUM_BLOCKS));
 
    int i;
@@ -39,21 +44,21 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
             sizeof(u1024bit_t),
             cudaMemcpyHostToDevice));
 
-         callCudaStreams(pinnedArray, bitVector, d_keys, d_currentKey, d_bitVector,
-               j, count, stride);
-         computeAndOutputGCDs(array, found, bitVector, i, j, dfp, nfp);
+         callCudaStreams(pinnedArray, bitVector_s1, d_keys_s1, d_currentKey, d_bitVector_s1,
+               j, count, stride, s1);
+         computeAndOutputGCDs(array, found, bitVector_s1, i, j, dfp, nfp);
       }
    }
 
    // do freeing
-   cudaFree(d_keys);
    cudaFree(d_currentKey);
-   cudaFree(d_bitVector);
+   cudaFree(d_keys_s1);
+   cudaFree(d_bitVector_s1);
 }
 
 void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
       u1024bit_t *d_keys, u1024bit_t *d_currentKey, uint8_t *d_bitVector,
-      int j, int count, int stride)
+      int j, int count, int stride, cudaStream_t stream)
 {
    static dim3 blockDim(BLOCK_DIM_X, BLOCK_DIM_Y);
    static dim3 gridDim(GRID_DIM_X, GRID_DIM_Y);
@@ -61,16 +66,16 @@ void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
    // copy list of keys
    int toCopy = j + stride >= count ? count - j : stride;
 
-   HANDLE_ERROR(cudaMemcpy(d_keys, array + j,
+   HANDLE_ERROR(cudaMemcpyAsync(d_keys, array + j,
             sizeof(u1024bit_t) * toCopy,
-            cudaMemcpyHostToDevice));
+            cudaMemcpyHostToDevice, stream));
 
    // initialize bit vector to 0
    HANDLE_ERROR(cudaMemset(d_bitVector, 0,
             sizeof(uint8_t) * NUM_BLOCKS));
 
    // kernel call
-   cuGCD<<<gridDim, blockDim>>>(d_currentKey, d_keys, d_bitVector);
+   cuGCD<<<gridDim, blockDim, 0, stream>>>(d_currentKey, d_keys, d_bitVector);
 
    HANDLE_ERROR(cudaPeekAtLastError());
 
