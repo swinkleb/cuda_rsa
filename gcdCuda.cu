@@ -8,13 +8,15 @@ void testGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE
 
    uint32_t *n1;
    uint32_t *n2;
-   uint32_t result[32];
+   uint32_t factor[32];
 
    dim3 blockDim(32, 1);
    dim3 gridDim(1, 1);
 
+   mpz_t a;
+   mpz_t b;
    mpz_t temp;
-   mpz_init(temp);
+   mpz_inits(a, b, temp, NULL);
 
    // allocate space for current keys
    HANDLE_ERROR(cudaMalloc((void **) &n1,
@@ -45,17 +47,25 @@ void testGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE
 */
    // kernel call
    mygcd<<<gridDim, blockDim>>>(n1, n2);
-
    HANDLE_ERROR(cudaPeekAtLastError());
 
-   // copy bit vector back
-   HANDLE_ERROR(cudaMemcpy(result, n2,
+   HANDLE_ERROR(cudaMemcpy(factor, n2,
       sizeof(uint32_t) * 32,
       cudaMemcpyDeviceToHost));
+   printf("%u\n%u\n%u\n", factor[29], factor[30], factor[31]);
 
-   mpz_import(temp, 32, 1, 4, 0, 0, 
-      result);
+   
    fprintf(stdout, "xxxxx p:\n");
+   mpz_import(a, 32, 1, 4, 0, 0, 
+      array);
+   mpz_import(b, 32, 1, 4, 0, 0, 
+      array + 1);
+   mpz_gcd(temp, a, b);
+   mpz_out_str(stdout, BASE_10, temp);
+    
+   mpz_import(temp, 32, 1, 4, 0, 0, 
+      factor);
+   fprintf(stdout, "\nxxxxx p:\n");
    mpz_out_str(stdout, BASE_10, temp);
    fprintf(stdout, "\nxxxxx\n");
 
