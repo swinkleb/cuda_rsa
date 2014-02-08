@@ -131,7 +131,7 @@ __device__ void gcd(unsigned int *x, unsigned int *y) {
       c++;
    }
 
-   while (isNonZero(x)) {
+   while (__any(x[threadIdx.x])) {
 
       while ((x[WORDS_PER_KEY - 1] & 1) == 0) {
          shiftR1(x);
@@ -140,7 +140,6 @@ __device__ void gcd(unsigned int *x, unsigned int *y) {
       // SOMETHING BAD HAPPENS AROUND HERE
 
       while ((y[WORDS_PER_KEY - 1] & 1) == 0) {
-         return;
          shiftR1(y);
       }
 
