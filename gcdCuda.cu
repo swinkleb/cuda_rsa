@@ -26,9 +26,19 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 
    // stream stuff
    cudaStream_t s1;
-   cudaStreamCreate(&s1);
+   HANDLE_ERROR(cudaStreamCreate(&s1));
    cudaStream_t s2;
-   cudaStreamCreate(&s2);
+   HANDLE_ERROR(cudaStreamCreate(&s2));
+
+   cudaEvent_t temp_event;
+   cudaEvent_t active_s1;
+   HANDLE_ERROR(cudaEventCreate(&active_s1));
+   cudaEvent_t active_s2;
+   HANDLE_ERROR(cudaEventCreate(&active_s2));
+   cudaEvent_t passive_s1;
+   HANDLE_ERROR(cudaEventCreate(&passive_s1));
+   cudaEvent_t passive_s2;
+   HANDLE_ERROR(cudaEventCreate(&passive_s2));
 
    // allocate space for current key, keys to compare and bit vector
    HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
@@ -58,13 +68,14 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 
          j1 = j;
          callCudaStreams(pinnedArray, bitVector_s1, d_keys_s1, d_currentKey, d_bitVector_s1,
-               &j, count, stride, s1);
+               &j, count, stride, s1, active_s1);
          j2 = j;
          callCudaStreams(pinnedArray, bitVector_s2, d_keys_s2, d_currentKey, d_bitVector_s2,
-               &j, count, stride, s2);
+               &j, count, stride, s2, active_s2);
          
-         cudaDeviceSynchronize(); // remove
+         cudaEventSynchronize(active_s1);
          computeAndOutputGCDs(array, found, bitVector_s1, i, j1, dfp, nfp);
+         cudaEventSynchronize(active_s2);
          computeAndOutputGCDs(array, found, bitVector_s2, i, j2, dfp, nfp);
       }
    }
@@ -80,7 +91,7 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 
 void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
       u1024bit_t *d_keys, u1024bit_t *d_currentKey, uint8_t *d_bitVector,
-      int *j, int count, int stride, cudaStream_t stream)
+      int *j, int count, int stride, cudaStream_t stream, cudaEvent_t event)
 {
    static dim3 blockDim(BLOCK_DIM_X, BLOCK_DIM_Y);
    static dim3 gridDim(GRID_DIM_X, GRID_DIM_Y);
@@ -110,6 +121,8 @@ void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
             sizeof(uint8_t) * NUM_BLOCKS,
             cudaMemcpyDeviceToHost, stream));
 
+   cudaEventRecord(event, stream);
+   
    *j = *j + stride;
 }
 
