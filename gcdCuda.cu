@@ -30,15 +30,10 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    cudaStream_t s2;
    HANDLE_ERROR(cudaStreamCreate(&s2));
 
-   cudaEvent_t temp_event;
    cudaEvent_t active_s1;
    HANDLE_ERROR(cudaEventCreate(&active_s1));
    cudaEvent_t active_s2;
    HANDLE_ERROR(cudaEventCreate(&active_s2));
-   cudaEvent_t passive_s1;
-   HANDLE_ERROR(cudaEventCreate(&passive_s1));
-   cudaEvent_t passive_s2;
-   HANDLE_ERROR(cudaEventCreate(&passive_s2));
 
    // allocate space for current key, keys to compare and bit vector
    HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
