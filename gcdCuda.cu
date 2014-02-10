@@ -105,6 +105,7 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
    uint8_t *bitvector) {
 
    __shared__ u1024bit_t shkey[BLOCK_DIM_Y * GRID_DIM_X];
+   __shared__ u1024bit_t compareto_keys[BLOCK_DIM_Y];
 
     /* We are using blocks of size (x, y) (32, 8),
     so each row in a block will be responsible for computing one set of
@@ -117,12 +118,24 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
    for (i = 0; i < BLOCK_DIM_Y * GRID_DIM_X; i++) {
       shkey[i].number[index] = key->number[index];
    }
+   for(i = 0; i < BLOCK_DIM_X; i++){
+        compareto_keys[threadIdx.y].number[i] = key_comparison_list[keyNum].number[i];
+
+   }
 
    __syncthreads();
 
-   gcd(shkey[keyNum].number, key_comparison_list[keyNum].number);
+    /*OLD*/
+   /*gcd(shkey[keyNum].number, key_comparison_list[keyNum].number);*/
 
-   if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
+   gcd(shkey[keyNum].number, compareto_keys[threadIdx.y].number);
+
+    /*OLD*/
+   /*if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
+      bitvector[keyNum / 8] |= LOW_ONE_MASK << (keyNum % 8);
+   }*/
+
+   if (isGreaterThanOne(compareto_keys[threadIdx.y].number)) {
       bitvector[keyNum / 8] |= LOW_ONE_MASK << (keyNum % 8);
    }
 }
