@@ -6,10 +6,7 @@
 #define PROG_ARG 0
 #define FLAG_ARG 1
 #define IN_FILE_ARG 2
-#define D_OUT_FILE_ARG 3 
-#define N_OUT_FILE_ARG 4
-#define DEFAULT_D_OUT_FILE "outputD.txt"
-#define DEFAULT_N_OUT_FILE "outputN.txt"
+#define OUT_FILE_ARG 3 
 #define DEFAULT_OUT_FILE "output.txt"
 #define NUM_INTS 32
 
