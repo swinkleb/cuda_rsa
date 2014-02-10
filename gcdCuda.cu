@@ -39,10 +39,11 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
             sizeof(u1024bit_t) * count,
             cudaMemcpyHostToDevice));
 
+d_keys = d_currentKey;
          // copy list of keys
-         HANDLE_ERROR(cudaMemcpy(d_keys, array,
+         /*HANDLE_ERROR(cudaMemcpy(d_keys, array,
             sizeof(u1024bit_t) * count,
-            cudaMemcpyHostToDevice));
+            cudaMemcpyHostToDevice));*/
 
 
 
