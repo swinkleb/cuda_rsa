@@ -4,7 +4,7 @@
 #include "io.h"
 #include "gcd.h"
 
-int findGCDs(mpz_t *arr, unsigned int size, const char *dfilename, const char *nfilename)
+int findGCDs(mpz_t *arr, unsigned int size, const char *filename)
 {
    unsigned int count = 0;
    uint32_t *found;
@@ -19,16 +19,9 @@ int findGCDs(mpz_t *arr, unsigned int size, const char *dfilename, const char *n
       perror("calloc");
       exit(1);
    }
-
-   FILE *dfp = fopen(dfilename, "w");
-   if (NULL == dfp) 
-   {   
-      perror("opening file");
-      exit(1);
-   }   
   
-   FILE *nfp = fopen(nfilename, "w");
-   if (NULL == nfp) 
+   FILE *fp = fopen(filename, "w");
+   if (NULL == fp) 
    {   
       perror("opening file");
       exit(1);
@@ -51,13 +44,13 @@ int findGCDs(mpz_t *arr, unsigned int size, const char *dfilename, const char *n
                mpz_cdiv_q(q, arr[i], p);
                calcPrivateKey(p, q, &d);
                
-               /* output D */
-               mpz_out_str(dfp, BASE_10, d);
-               fprintf(dfp, "\n");
-             
                /* output N */
-               mpz_out_str(nfp, BASE_10, arr[i]);
-               fprintf(nfp, "\n");
+               mpz_out_str(fp, BASE_10, arr[i]);
+               fprintf(fp, ":");
+             
+               /* output D */
+               mpz_out_str(fp, BASE_10, d);
+               fprintf(fp, "\n");
             }
 
             /* check if previously found */
@@ -68,29 +61,27 @@ int findGCDs(mpz_t *arr, unsigned int size, const char *dfilename, const char *n
                mpz_cdiv_q(q, arr[j], p);
                calcPrivateKey(p, q, &d);
                
-               /* output D */
-               mpz_out_str(dfp, BASE_10, d);
-               fprintf(dfp, "\n");
-                  
                /* output N */
-               mpz_out_str(nfp, BASE_10, arr[j]);
-               fprintf(nfp, "\n");
+               mpz_out_str(fp, BASE_10, arr[j]);
+               fprintf(fp, ":");
+                  
+               /* output D */
+               mpz_out_str(fp, BASE_10, d);
+               fprintf(fp, "\n");
             }
          }
       }
-      fflush(dfp);
-      fflush(nfp);
+      fflush(fp);
    }
    
    mpz_clears(p, q, d, NULL);
    free(found);
-   fclose(dfp);
-   fclose(nfp);
+   fclose(fp);
 
    return count;
 }
 
-int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, int commonKeyOffset, int iOffset, FILE *dfp, FILE *nfp)
+int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, int commonKeyOffset, int iOffset, FILE *fp)
 {
    unsigned int thisKeyOffset;
    unsigned int count = 0;
@@ -170,12 +161,12 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
                /* End */
 
                /* output N */
-               mpz_out_str(nfp, BASE_10, temp1);
-               fprintf(nfp, "\n");
+               mpz_out_str(fp, BASE_10, temp1);
+               fprintf(fp, ":");
                
                /* output D */
-               mpz_out_str(dfp, BASE_10, d);
-               fprintf(dfp, "\n");
+               mpz_out_str(fp, BASE_10, d);
+               fprintf(fp, "\n");
             }
 
             /* check if previously found */
@@ -211,17 +202,16 @@ int computeAndOutputGCDs(u1024bit_t *arr, uint32_t *found, uint8_t *bitvector, i
                /* End */
                
                /* output N */
-               mpz_out_str(nfp, BASE_10, temp2);
-               fprintf(nfp, "\n");
+               mpz_out_str(fp, BASE_10, temp2);
+               fprintf(fp, ":");
                
                /* output D */
-               mpz_out_str(dfp, BASE_10, d);
-               fprintf(dfp, "\n");
+               mpz_out_str(fp, BASE_10, d);
+               fprintf(fp, "\n");
             }
          }
       }
-      fflush(dfp);
-      fflush(nfp);
+      fflush(fp);
    }
    
    mpz_clears(p, q, d, temp1, temp2, NULL);
