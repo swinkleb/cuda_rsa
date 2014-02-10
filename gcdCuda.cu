@@ -18,38 +18,71 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    dim3 gridDim(GRID_DIM_X, GRID_DIM_Y);
 
    // allocate space for current key, keys to compare and bit vector
-   HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
+   /*OLD*/
+   /*HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
       sizeof(u1024bit_t)));
    HANDLE_ERROR(cudaMalloc((void **) &d_keys,
       sizeof(u1024bit_t) * BLOCK_DIM_Y * NUM_BLOCKS));
    HANDLE_ERROR(cudaMalloc((void **) &d_bitVector,
+      sizeof(uint8_t) * NUM_BLOCKS));*/
+
+    /*NEW*/
+   HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
+      sizeof(u1024bit_t) * count));
+   HANDLE_ERROR(cudaMalloc((void **) &d_keys,
+      sizeof(u1024bit_t) * count));
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector,
       sizeof(uint8_t) * NUM_BLOCKS));
+
+         // copy current key
+         HANDLE_ERROR(cudaMemcpy(d_currentKey, array,
+            sizeof(u1024bit_t) * count,
+            cudaMemcpyHostToDevice));
+
+         // copy list of keys
+         HANDLE_ERROR(cudaMemcpy(d_keys, array,
+            sizeof(u1024bit_t) * count,
+            cudaMemcpyHostToDevice));
+
+
+
 
    int i;
    int j;
-   int toCopy;
    int stride = NUM_BLOCKS * BLOCK_DIM_Y;
+
+    /*Transfer the entire key space here*/
+
+
+    /*Then invoke the loop. Treat i,j as a pointer offsets.*/
+
+
+    /*There shouldn't need to be much in the way of changes to the kernel.
+    Because the kernel already works with pointer offsets anyway, and since
+    we always know where we are in the key space from the host side, we can
+    simply pass the kernel a pointer offset, and that way we keep the kernel
+    from having to do any funky indexing or anything else.*/
 
    for (i = 0; i < count; i++) {
       for (j = i + 1; j < count; j += stride) {
          // copy current key
-         HANDLE_ERROR(cudaMemcpy(d_currentKey, array + i,
+   /*      HANDLE_ERROR(cudaMemcpy(d_currentKey, array + i,
             sizeof(u1024bit_t),
-            cudaMemcpyHostToDevice));
+            cudaMemcpyHostToDevice));*/
 
          // copy list of keys
-         toCopy = j + stride >= count ? count - j : stride;
+         /*toCopy = j + stride >= count ? count - j : stride;
 
          HANDLE_ERROR(cudaMemcpy(d_keys, array + j,
             sizeof(u1024bit_t) * toCopy,
-            cudaMemcpyHostToDevice));
+            cudaMemcpyHostToDevice));*/
 
          // initialize bit vector to 0
          HANDLE_ERROR(cudaMemset(d_bitVector, 0,
             sizeof(uint8_t) * NUM_BLOCKS));
 
          // kernel call
-         cuGCD<<<gridDim, blockDim>>>(d_currentKey, d_keys, d_bitVector);
+         cuGCD<<<gridDim, blockDim>>>(d_currentKey + i, d_keys + j, d_bitVector);
 
          HANDLE_ERROR(cudaPeekAtLastError());
 
