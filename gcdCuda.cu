@@ -99,7 +99,8 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 
     /*Now cudaMemcpyAsync() the keys over to the device*/
     HANDLE_ERROR(cudaMemcpyAsync(d_currentKey, pinnedArray, sizeof(u1024bit_t) * count, cudaMemcpyHostToDevice, s1));
-    HANDLE_ERROR(cudaMemcpyAsync(d_keys_s1, pinnedArray, sizeof(u1024bit_t) * count, cudaMemcpyHostToDevice, s2));
+    /*HANDLE_ERROR(cudaMemcpyAsync(d_keys_s1, pinnedArray, sizeof(u1024bit_t) * count, cudaMemcpyHostToDevice, s2));*/
+    d_keys_s1 = d_currentKey;
 
    int i;
    int j;
