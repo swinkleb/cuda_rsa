@@ -10,12 +10,20 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    u1024bit_t *pinnedArray;
    uint8_t *bitVector_s1;
    uint8_t *bitVector_s2;
+   uint8_t *bitVector_s3;
+   uint8_t *bitVector_s4;
+   uint8_t *bitVector_s5;
+   uint8_t *bitVector_s6;
    
    HANDLE_ERROR(cudaMallocHost(&pinnedArray, sizeof(u1024bit_t) * count));
    memcpy(pinnedArray, array, sizeof(u1024bit_t) * count);
 
    HANDLE_ERROR(cudaMallocHost(&bitVector_s1, sizeof(uint8_t) * NUM_BLOCKS));
    HANDLE_ERROR(cudaMallocHost(&bitVector_s2, sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMallocHost(&bitVector_s3, sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMallocHost(&bitVector_s4, sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMallocHost(&bitVector_s5, sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMallocHost(&bitVector_s6, sizeof(uint8_t) * NUM_BLOCKS));
 
    // pointers on device
    u1024bit_t *d_currentKey;
@@ -23,20 +31,42 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    uint8_t *d_bitVector_s1;
    u1024bit_t *d_keys_s2;
    uint8_t *d_bitVector_s2;
+   uint8_t *d_bitVector_s3;
+   uint8_t *d_bitVector_s4;
+   uint8_t *d_bitVector_s5;
+   uint8_t *d_bitVector_s6;
 
    // stream stuff
    cudaStream_t s1;
    HANDLE_ERROR(cudaStreamCreate(&s1));
    cudaStream_t s2;
    HANDLE_ERROR(cudaStreamCreate(&s2));
+   cudaStream_t s3;
+   HANDLE_ERROR(cudaStreamCreate(&s3));
+   cudaStream_t s4;
+   HANDLE_ERROR(cudaStreamCreate(&s4));
+   cudaStream_t s5;
+   HANDLE_ERROR(cudaStreamCreate(&s5));
+   cudaStream_t s6;
+   HANDLE_ERROR(cudaStreamCreate(&s6));
+
 
    cudaEvent_t active_s1;
    HANDLE_ERROR(cudaEventCreate(&active_s1));
    cudaEvent_t active_s2;
    HANDLE_ERROR(cudaEventCreate(&active_s2));
+   cudaEvent_t active_s3;
+   HANDLE_ERROR(cudaEventCreate(&active_s3));
+   cudaEvent_t active_s4;
+   HANDLE_ERROR(cudaEventCreate(&active_s4));
+   cudaEvent_t active_s5;
+   HANDLE_ERROR(cudaEventCreate(&active_s5));
+   cudaEvent_t active_s6;
+   HANDLE_ERROR(cudaEventCreate(&active_s6));
 
    // allocate space for current key, keys to compare and bit vector
-   HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
+   /*OLD*/
+   /*HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
       sizeof(u1024bit_t)));
 
    HANDLE_ERROR(cudaMalloc((void **) &d_keys_s1,
@@ -46,22 +76,46 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
    HANDLE_ERROR(cudaMalloc((void **) &d_keys_s2,
       sizeof(u1024bit_t) * BLOCK_DIM_Y * NUM_BLOCKS));
    HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s2,
+      sizeof(uint8_t) * NUM_BLOCKS));*/
+
+   HANDLE_ERROR(cudaMalloc((void **) &d_currentKey,
+      sizeof(u1024bit_t) * count));
+
+   HANDLE_ERROR(cudaMalloc((void **) &d_keys_s1,
+      sizeof(u1024bit_t) * count));
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s1,
       sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s2,
+      sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s3,
+      sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s4,
+      sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s5,
+      sizeof(uint8_t) * NUM_BLOCKS));
+   HANDLE_ERROR(cudaMalloc((void **) &d_bitVector_s6,
+      sizeof(uint8_t) * NUM_BLOCKS));
+
+
+    /*Now cudaMemcpyAsync() the keys over to the device*/
+    HANDLE_ERROR(cudaMemcpyAsync(d_currentKey, pinnedArray, sizeof(u1024bit_t) * count, cudaMemcpyHostToDevice, s1));
+    HANDLE_ERROR(cudaMemcpyAsync(d_keys_s1, pinnedArray, sizeof(u1024bit_t) * count, cudaMemcpyHostToDevice, s2));
 
    int i;
    int j;
    int j1;
    int j2;
+   int j3,j4,j5,j6;
    int stride = NUM_BLOCKS * BLOCK_DIM_Y;
 
    for (i = 0; i < count; i++) {
       for (j = i + 1; j < count; j += stride) {
          // copy current key
-         HANDLE_ERROR(cudaMemcpy(d_currentKey, array + i,
+         /*HANDLE_ERROR(cudaMemcpy(d_currentKey, array + i,
             sizeof(u1024bit_t),
-            cudaMemcpyHostToDevice));
-
-         j1 = j;
+            cudaMemcpyHostToDevice));*/
+/*OLD*/
+         /*j1 = j;
          callCudaStreams(pinnedArray, bitVector_s1, d_keys_s1, d_currentKey, d_bitVector_s1,
                &j, count, stride, s1, active_s1);
          j2 = j;
@@ -71,7 +125,40 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
          cudaEventSynchronize(active_s1);
          computeAndOutputGCDs(array, found, bitVector_s1, i, j1, dfp, nfp);
          cudaEventSynchronize(active_s2);
+         computeAndOutputGCDs(array, found, bitVector_s2, i, j2, dfp, nfp);*/
+
+         j1 = j;
+         callCudaStreams(pinnedArray, bitVector_s1, d_keys_s1, d_currentKey + i, d_bitVector_s1,
+               &j, count, stride, s1, active_s1);
+         j2 = j;
+         callCudaStreams(pinnedArray, bitVector_s2, d_keys_s1, d_currentKey + i, d_bitVector_s2,
+               &j, count, stride, s2, active_s2);
+         j3 = j;
+         callCudaStreams(pinnedArray, bitVector_s3, d_keys_s1, d_currentKey + i, d_bitVector_s3,
+               &j, count, stride, s3, active_s3);
+         j4 = j;
+         callCudaStreams(pinnedArray, bitVector_s4, d_keys_s1, d_currentKey + i, d_bitVector_s4,
+               &j, count, stride, s4, active_s4);
+         j5 = j;
+         callCudaStreams(pinnedArray, bitVector_s5, d_keys_s1, d_currentKey + i, d_bitVector_s5,
+               &j, count, stride, s5, active_s5);
+         j6 = j;
+         callCudaStreams(pinnedArray, bitVector_s6, d_keys_s1, d_currentKey + i, d_bitVector_s6,
+               &j, count, stride, s6, active_s6);
+         
+         cudaEventSynchronize(active_s1);
+         computeAndOutputGCDs(array, found, bitVector_s1, i, j1, dfp, nfp);
+         cudaEventSynchronize(active_s2);
          computeAndOutputGCDs(array, found, bitVector_s2, i, j2, dfp, nfp);
+         cudaEventSynchronize(active_s3);
+         computeAndOutputGCDs(array, found, bitVector_s3, i, j3, dfp, nfp);
+         cudaEventSynchronize(active_s4);
+         computeAndOutputGCDs(array, found, bitVector_s4, i, j4, dfp, nfp);
+         cudaEventSynchronize(active_s5);
+         computeAndOutputGCDs(array, found, bitVector_s5, i, j5, dfp, nfp);
+         cudaEventSynchronize(active_s6);
+         computeAndOutputGCDs(array, found, bitVector_s6, i, j6, dfp, nfp);
+
       }
    }
 
@@ -80,7 +167,7 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
 
    cudaFree(d_keys_s1);
    cudaFree(d_bitVector_s1);
-   cudaFree(d_keys_s2);
+   //cudaFree(d_keys_s2);
    cudaFree(d_bitVector_s2);
 }
 
@@ -92,22 +179,22 @@ void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
    static dim3 gridDim(GRID_DIM_X, GRID_DIM_Y);
 
    // copy list of keys
-   int toCopy = *j + stride >= count ? count - *j : stride;
+   /*int toCopy = *j + stride >= count ? count - *j : stride;
    if (toCopy < 0)
    {
       return;
-   }
+   }*/
 
-   HANDLE_ERROR(cudaMemcpyAsync(d_keys, array + *j,
+   /*HANDLE_ERROR(cudaMemcpyAsync(d_keys, array + *j,
             sizeof(u1024bit_t) * toCopy,
-            cudaMemcpyHostToDevice, stream));
+            cudaMemcpyHostToDevice, stream));*/
 
    // initialize bit vector to 0
    HANDLE_ERROR(cudaMemset(d_bitVector, 0,
             sizeof(uint8_t) * NUM_BLOCKS));
 
    // kernel call
-   cuGCD<<<gridDim, blockDim, 0, stream>>>(d_currentKey, d_keys, d_bitVector);
+   cuGCD<<<gridDim, blockDim, 0, stream>>>(d_currentKey, d_keys + *j, d_bitVector);
 
    HANDLE_ERROR(cudaPeekAtLastError());
 
@@ -121,10 +208,12 @@ void callCudaStreams(u1024bit_t *array, uint8_t *bitVector,
    *j = *j + stride;
 }
 
+
 __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list, 
    uint8_t *bitvector) {
 
    __shared__ u1024bit_t shkey[BLOCK_DIM_Y * GRID_DIM_X];
+   __shared__ u1024bit_t compareto_keys[BLOCK_DIM_Y];
 
     /* We are using blocks of size (x, y) (32, 8),
     so each row in a block will be responsible for computing one set of
@@ -137,15 +226,29 @@ __global__ void cuGCD(u1024bit_t *key, u1024bit_t *key_comparison_list,
    for (i = 0; i < BLOCK_DIM_Y * GRID_DIM_X; i++) {
       shkey[i].number[index] = key->number[index];
    }
+   for(i = 0; i < BLOCK_DIM_X; i++){
+        compareto_keys[threadIdx.y].number[i] = key_comparison_list[keyNum].number[i];
+
+   }
 
    __syncthreads();
 
-   gcd(shkey[keyNum].number, key_comparison_list[keyNum].number);
+    /*OLD*/
+   /*gcd(shkey[keyNum].number, key_comparison_list[keyNum].number);*/
 
-   if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
+   gcd(shkey[keyNum].number, compareto_keys[threadIdx.y].number);
+
+    /*OLD*/
+   /*if (isGreaterThanOne(key_comparison_list[keyNum].number)) {
+      bitvector[keyNum / 8] |= LOW_ONE_MASK << (keyNum % 8);
+   }*/
+
+   if (isGreaterThanOne(compareto_keys[threadIdx.y].number)) {
       bitvector[keyNum / 8] |= LOW_ONE_MASK << (keyNum % 8);
    }
 }
+
+
 
 // result ends up in y; x is also overwritten
 __device__ void gcd(unsigned int *x, unsigned int *y) {
