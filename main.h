@@ -10,8 +10,8 @@
 #define N_OUT_FILE_ARG 4
 #define DEFAULT_D_OUT_FILE "outputD.txt"
 #define DEFAULT_N_OUT_FILE "outputN.txt"
+#define DEFAULT_OUT_FILE "output.txt"
 #define NUM_INTS 32
-
 
 // block and grid dimensions
 #define BLOCK_DIM_Y 8 // be careful changing this; bit vector size depends on it
@@ -26,10 +26,10 @@ typedef struct u1024bit_t {
 
 void usage(char *myName);
 
-void cpuImpl(char *inFile, char *dOutFile, char *nOutFile);
+void cpuImpl(char *inFile, char *outFile);
 
-void gpuImpl(char *inFile, char *dOutFile, char *nOutFile);
+void gpuImpl(char *inFile, char *outFile);
 
-void testImpl(char *inFile, char *dOutFile, char *nOutFile);
+void testImpl(char *inFile, char *outFile);
 
 void print1024Int(uint32_t *number);

@@ -40,21 +40,20 @@ void usage(char *myName)
    exit(1);
 }
 
-void cpuImpl(char *inFile, char *dOutFile, char *nOutFile)
+void cpuImpl(char *inFile, char *outFile)
 {
    mpz_t *array;
    unsigned int count;
 
    count = readKeysFromFileMPZ(&array, inFile);
    count = findGCDs(array, count, 
-         dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile,
-         nOutFile == NULL ? DEFAULT_N_OUT_FILE : nOutFile
+         outFile == NULL ? DEFAULT_OUT_FILE : outFile
          );
    
    printf("Total number of bad keys found: %d\n", count);
 }
 
-void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
+void gpuImpl(char *inFile, char *outFile)
 {
    u1024bit_t *array;
    uint32_t *found;
@@ -71,25 +70,17 @@ void gpuImpl(char *inFile, char *dOutFile, char *nOutFile)
    }
 
    /* open output files so we can pass FILE *'s */
-   FILE *dfp = fopen(dOutFile == NULL ? DEFAULT_D_OUT_FILE : dOutFile, "w");
-   if (NULL == dfp) 
+   FILE *fp = fopen(outFile == NULL ? DEFAULT_OUT_FILE : outFile, "w");
+   if (NULL == fp) 
    {   
       perror("opening file");
       exit(1);
    } 
 
-   FILE *nfp = fopen(nOutFile == NULL ? DEFAULT_N_OUT_FILE : nOutFile, "w");
-   if (NULL == nfp) 
-   {   
-      perror("opening file");
-      exit(1);
-   } 
-
-   dispatchGcdCalls(array, found, count, dfp, nfp);
+   dispatchGcdCalls(array, found, count, fp);
 
    /* close output files */
-   fclose(dfp);
-   fclose(nfp);
+   fclose(fp);
 }
 
 // can use this for debugging

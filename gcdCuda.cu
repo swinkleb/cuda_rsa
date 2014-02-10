@@ -4,7 +4,7 @@
 #include "gcd.h"
 #include "gcdCuda.h"
 
-void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, FILE *nfp) {
+void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *fp) {
 
    // resultant bit vector on host
    uint8_t bitVector[NUM_BLOCKS];
@@ -58,7 +58,7 @@ void dispatchGcdCalls(u1024bit_t *array, uint32_t *found, int count, FILE *dfp, 
             sizeof(uint8_t) * NUM_BLOCKS,
             cudaMemcpyDeviceToHost));
 
-         computeAndOutputGCDs(array, found, bitVector, i, j, dfp, nfp);
+         computeAndOutputGCDs(array, found, bitVector, i, j, fp);
       }
    }
 
