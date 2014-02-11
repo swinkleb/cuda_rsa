@@ -191,7 +191,7 @@ __device__ void subtract(uint32_t *x, uint32_t *y) {
       }
 
       if (index > 0) {
-         borrowPtr[index - 1] = (temp == 0xffffffffU && borrow[index]);
+         borrowPtr[index - 1] = (temp == 0xffffffffU && borrowPtr[index]);
       }
    }
 
